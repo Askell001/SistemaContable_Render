@@ -1,20 +1,20 @@
 ﻿# =========================================================================
 # DOCKERFILE PARA SISTEMA CONTABLE ASP.NET MVC (.NET Framework 4.8 / Mono)
-# Optimizado para Render.com con Ubuntu 20.04 LTS y repositorio oficial Mono
+# Optimizado para Render.com con Ubuntu 20.04 LTS y clave HTTPS directa
 # =========================================================================
 
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# 1. Configurar repositorios e instalar Mono Complete, MSBuild, NuGet y XSP4
+# 1. Instalar Mono Complete, MSBuild, NuGet y XSP4 mediante clave GPG directa por HTTPS
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         gnupg \
         ca-certificates \
         curl \
-    && apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6 \
-    && echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" > /etc/apt/sources.list.d/mono-official-stable.list \
+    && curl -fsSL https://download.mono-project.com/repo/xamarin.gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/mono-official.gpg \
+    && echo "deb https://download.mono-project.com/repo/ubuntu stable-focal main" > /etc/apt/sources.list.d/mono-official.list \
     && apt-get update && \
     apt-get install -y --no-install-recommends \
         mono-complete \
