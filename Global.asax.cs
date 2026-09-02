@@ -10,7 +10,14 @@ namespace SistemaContable
     {
         protected void Application_Start()
         {
-            AreaRegistration.RegisterAllAreas();
+            try
+            {
+                AreaRegistration.RegisterAllAreas();
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"[Global.asax] Aviso en AreaRegistration: {ex.Message}");
+            }
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
 
