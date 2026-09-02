@@ -1,0 +1,317 @@
+@{
+    ViewBag.Title = "Software Contable en la Nube";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- Hero Section -->
+<section id="inicio" class="hero-section">
+    <div class="container">
+        <div class="row align-items-center gy-5">
+            <div class="col-lg-7 text-center text-lg-start">
+                <span class="badge bg-success bg-opacity-25 text-success border border-success border-opacity-50 px-3 py-2 rounded-pill fw-semibold mb-3">
+                    <i class="bi bi-stars me-1"></i> Tecnología .NET Framework 4.8 &amp; MongoDB
+                </span>
+                <h1 class="display-4 fw-bold lh-sm mb-3">
+                    Gestión Contable Inteligente, Rápida y Segura
+                </h1>
+                <p class="lead text-light opacity-75 mb-4">
+                    Automatiza tus asientos contables, catálogo de cuentas por partida doble y reportes financieros en tiempo real con una arquitectura de alta disponibilidad respaldada por MongoDB.
+                </p>
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center justify-content-lg-start">
+                    <a href="@Url.Action("Login", "Account")" class="btn btn-intranet btn-lg fs-6 px-4 py-3 shadow">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Acceso a Intranet
+                    </a>
+                    <a href="#planes" class="btn btn-outline-light btn-lg fs-6 px-4 py-3">
+                        <i class="bi bi-tags me-2"></i>Ver Planes y Tarifas
+                    </a>
+                </div>
+                <div class="mt-4 pt-3 d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-white-50 small">
+                    <div><i class="bi bi-check-circle-fill text-success me-1"></i> Sin caídas de servicio</div>
+                    <div><i class="bi bi-shield-check text-success me-1"></i> Cifrado BCrypt</div>
+                    <div><i class="bi bi-cloud-check text-success me-1"></i> MongoDB Atlas Ready</div>
+                </div>
+            </div>
+            <div class="col-lg-5">
+                <div class="card bg-dark text-white border-secondary border-opacity-50 shadow-lg p-4 rounded-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-success"><i class="bi bi-activity me-1"></i>Sistema Online</span>
+                        <small class="text-white-50">v1.0.0 Pro</small>
+                    </div>
+                    <div class="bg-black bg-opacity-50 p-3 rounded-3 mb-3 border border-secondary border-opacity-25 font-monospace small">
+                        <div class="text-success"><i class="bi bi-terminal me-2"></i>Status: Conectado a MongoDB</div>
+                        <div class="text-white-50">Driver: MongoDB.Driver v2.25.0</div>
+                        <div class="text-white-50">Database: @ViewBag.DatabaseName</div>
+                        <div class="text-white-50">Connection: @ViewBag.ActiveConnection</div>
+                    </div>
+                    <div class="row g-2 text-center small">
+                        <div class="col-6">
+                            <div class="p-2 bg-secondary bg-opacity-25 rounded border border-secondary border-opacity-25">
+                                <div class="text-white-50">Cuentas</div>
+                                <div class="fw-bold fs-5 text-white">@(ViewBag.TotalCuentas ?? 0)</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-2 bg-secondary bg-opacity-25 rounded border border-secondary border-opacity-25">
+                                <div class="text-white-50">Asientos</div>
+                                <div class="fw-bold fs-5 text-white">@(ViewBag.TotalAsientos ?? 0)</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-center">
+                        <a href="@Url.Action("Login", "Account")" class="btn btn-sm btn-outline-success w-100">
+                            <i class="bi bi-key me-1"></i>Ingresar como Administrador
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección de Servicios Contables -->
+<section id="servicios" class="py-5 bg-white">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="text-success fw-bold text-uppercase small tracking-wide">Módulos Especializados</span>
+            <h2 class="fw-bold mt-1">Servicios Contables de Vanguardia</h2>
+            <p class="text-muted">Herramientas diseñadas para estudios contables, contadores independientes y empresas en crecimiento.</p>
+        </div>
+
+        <div class="row g-4">
+            <!-- Servicio 1 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-primary bg-opacity-10 text-primary rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-journal-text fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Libro Diario y Asientos</h5>
+                    <p class="text-muted small mb-0">
+                        Registro ágil de pólizas y asientos contables con validación de partida doble automática y precisión decimal Decimal128 en MongoDB.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Servicio 2 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-10 text-success rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-diagram-3 fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Plan y Catálogo de Cuentas</h5>
+                    <p class="text-muted small mb-0">
+                        Estructura contable multinivel adaptable (Activo, Pasivo, Patrimonio, Ingresos y Gastos) con códigos normalizados y búsquedas instantáneas.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Servicio 3 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-warning bg-opacity-10 text-warning rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-file-earmark-bar-graph fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Balances y Reportes Financieros</h5>
+                    <p class="text-muted small mb-0">
+                        Generación automática del Balance de Comprobación, Balance General y Estado de Resultados con exportación y filtros por fechas.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Servicio 4 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-info bg-opacity-10 text-info rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-shield-check fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Seguridad y Roles (RBAC)</h5>
+                    <p class="text-muted small mb-0">
+                        Control de accesos granular con perfiles de Administrador, Contador y Lectura, combinados con cifrado seguro BCrypt.Net.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Servicio 5 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-danger bg-opacity-10 text-danger rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-bell-fill fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Notificaciones y Alertas</h5>
+                    <p class="text-muted small mb-0">
+                        Sistema centralizado de alertas contables, recordatorios de vencimiento tributario y aprobaciones pendientes de asientos.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Servicio 6 -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 p-4 feature-card shadow-sm">
+                    <div class="d-inline-flex align-items-center justify-content-center bg-secondary bg-opacity-10 text-secondary rounded-3 p-3 mb-3" style="width: 50px; height: 50px;">
+                        <i class="bi bi-cloud-arrow-up fs-4"></i>
+                    </div>
+                    <h5 class="fw-bold">Alta Disponibilidad NoSQL</h5>
+                    <p class="text-muted small mb-0">
+                        Resiliencia continua con MongoDB Atlas. Si un nodo falla, el sistema maneja reconexiones automáticas sin interrumpir a los usuarios.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección de Tabla de Planes y Precios -->
+<section id="planes" class="py-5 bg-light border-top border-bottom">
+    <div class="container py-4">
+        <div class="text-center max-w-700 mx-auto mb-5">
+            <span class="text-success fw-bold text-uppercase small tracking-wide">Precios Transparentes</span>
+            <h2 class="fw-bold mt-1">Planes Adaptados a tu Negocio</h2>
+            <p class="text-muted">Escoge el plan ideal para tu estudio o compañía. Sin comisiones ocultas.</p>
+        </div>
+
+        <div class="row g-4 align-items-stretch">
+            <!-- Plan Emprendedor -->
+            <div class="col-lg-4">
+                <div class="card pricing-card h-100 p-4 bg-white shadow-sm">
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border px-3 py-1 fw-semibold">Emprendedor</span>
+                        <h4 class="fw-bold mt-3 mb-1">Plan Inicial</h4>
+                        <p class="text-muted small">Para trabajadores independientes o microempresas.</p>
+                    </div>
+                    <div class="my-3">
+                        <span class="fs-1 fw-bold text-dark">$19</span>
+                        <span class="text-muted">/mes</span>
+                    </div>
+                    <hr />
+                    <ul class="list-unstyled small mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Hasta 100 Asientos / mes</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Plan de cuentas estándar</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>1 Usuario Administrador</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Exportación en PDF</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-x text-muted me-2"></i>Auditoría multi-rol</li>
+                        <li class="mb-2 text-muted"><i class="bi bi-x text-muted me-2"></i>Soporte 24/7 dedicado</li>
+                    </ul>
+                    <a href="@Url.Action("Login", "Account")" class="btn btn-outline-dark w-100 py-2 fw-semibold">Comenzar Ahora</a>
+                </div>
+            </div>
+
+            <!-- Plan Profesional (Destacado) -->
+            <div class="col-lg-4">
+                <div class="card pricing-card popular h-100 p-4 bg-white shadow">
+                    <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success px-3 py-2 shadow-sm">
+                        MÁS POPULAR
+                    </span>
+                    <div class="mb-3">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success px-3 py-1 fw-semibold">Estudios Contables</span>
+                        <h4 class="fw-bold mt-3 mb-1">Plan Profesional</h4>
+                        <p class="text-muted small">Para contadores públicos y despachos contables.</p>
+                    </div>
+                    <div class="my-3">
+                        <span class="fs-1 fw-bold text-success">$49</span>
+                        <span class="text-muted">/mes</span>
+                    </div>
+                    <hr />
+                    <ul class="list-unstyled small mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Asientos Contables Ilimitados</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Plan de cuentas multinivel personalizable</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Hasta 5 Usuarios con Roles (Admin / Contador / Lectura)</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Balances e Informes Financieros en Vivo</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Módulo de Notificaciones y Alertas</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Soporte prioritario por correo</li>
+                    </ul>
+                    <a href="@Url.Action("Login", "Account")" class="btn btn-success w-100 py-2 fw-semibold shadow-sm">
+                        <i class="bi bi-rocket-takeoff me-1"></i>Elegir Plan Profesional
+                    </a>
+                </div>
+            </div>
+
+            <!-- Plan Corporativo -->
+            <div class="col-lg-4">
+                <div class="card pricing-card h-100 p-4 bg-white shadow-sm">
+                    <div class="mb-3">
+                        <span class="badge bg-light text-dark border px-3 py-1 fw-semibold">Grandes Empresas</span>
+                        <h4 class="fw-bold mt-3 mb-1">Plan Corporativo</h4>
+                        <p class="text-muted small">Para medianas y grandes corporaciones.</p>
+                    </div>
+                    <div class="my-3">
+                        <span class="fs-1 fw-bold text-dark">$99</span>
+                        <span class="text-muted">/mes</span>
+                    </div>
+                    <hr />
+                    <ul class="list-unstyled small mb-4 flex-grow-1">
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Todo lo del Plan Profesional</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Usuarios y Empresas Ilimitadas</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Base de Datos MongoDB Dedicada</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Integración con APIs externas y ERP</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Auditoría forense de cambios</li>
+                        <li class="mb-2"><i class="bi bi-check2 text-success me-2 fw-bold"></i>Soporte telefónico 24/7 y SLA 99.9%</li>
+                    </ul>
+                    <a href="@Url.Action("Login", "Account")" class="btn btn-outline-dark w-100 py-2 fw-semibold">Contactar Asesor</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Sección de Diagnóstico MongoDB y Salud del Sistema -->
+<section id="diagnostico" class="py-5 bg-white">
+    <div class="container py-3">
+        <div class="card border-0 shadow-sm rounded-4 p-4 p-md-5 bg-light">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+                <div>
+                    <h3 class="h4 fw-bold mb-1">
+                        <i class="bi bi-arrow-repeat text-success me-2"></i>Monitoreo y Sincronización Simultánea MongoDB
+                    </h3>
+                    <p class="text-muted mb-0 small">Persistencia dual en tiempo real: MongoDB Atlas (Nube) y MongoDB Local (localhost:27017)</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    @if (ViewBag.PingSuccess == true)
+                    {
+                        <span class="badge bg-success fs-6 px-3 py-2 rounded-pill shadow-sm">
+                            <i class="bi bi-clouds-fill me-1"></i> @(ViewBag.PingMessage ?? "Sincronización Activa")
+                        </span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger fs-6 px-3 py-2 rounded-pill shadow-sm">
+                            <i class="bi bi-exclamation-octagon-fill me-1"></i> Desconectado / Error
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="row g-3 text-center mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 border-0 shadow-xs bg-white rounded-3">
+                        <div class="text-muted small">Cadena de Conexión</div>
+                        <div class="fw-bold text-dark mt-1">@ViewBag.ActiveConnection</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 border-0 shadow-xs bg-white rounded-3">
+                        <div class="text-muted small">Base de Datos</div>
+                        <div class="fw-bold text-dark mt-1">@ViewBag.DatabaseName</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 border-0 shadow-xs bg-white rounded-3">
+                        <div class="text-muted small">Usuarios Registrados</div>
+                        <div class="fw-bold text-success mt-1">@(ViewBag.TotalUsuarios ?? 0)</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 border-0 shadow-xs bg-white rounded-3">
+                        <div class="text-muted small">Asientos Contables</div>
+                        <div class="fw-bold text-primary mt-1">@(ViewBag.TotalAsientos ?? 0)</div>
+                    </div>
+                </div>
+            </div>
+
+            @if (ViewBag.PingSuccess != true && !string.IsNullOrEmpty(ViewBag.LastErrorMessage))
+            {
+                <div class="alert alert-warning mb-0" role="alert">
+                    <strong><i class="bi bi-exclamation-triangle-fill me-1"></i>Detalle:</strong> @ViewBag.LastErrorMessage
+                </div>
+            }
+        </div>
+    </div>
+</section>

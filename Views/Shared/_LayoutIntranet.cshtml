@@ -1,0 +1,666 @@
+@{
+    string currentCtrl = ViewContext.RouteData.Values["controller"] != null ? ViewContext.RouteData.Values["controller"].ToString() : "";
+    string userRol = Session["Rol"] != null ? Session["Rol"].ToString() : "";
+    string userEmpresa = Session["Empresa"] != null ? Session["Empresa"].ToString() : "Empresa Principal S.A.";
+    bool esAdmin = string.Equals(userRol, "Admin", StringComparison.OrdinalIgnoreCase);
+    bool esContador = string.Equals(userRol, "Contador", StringComparison.OrdinalIgnoreCase);
+    bool esLector = string.Equals(userRol, "Lectura", StringComparison.OrdinalIgnoreCase) || string.Equals(userRol, "Lector", StringComparison.OrdinalIgnoreCase);
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - Intranet | ContaCloud</title>
+    <!-- Bootstrap 5 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" />
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --topbar-height: 64px;
+            --brand-color: #10b981;
+            --sidebar-bg: #111827;
+            --sidebar-hover: #1f2937;
+            --sidebar-active: #374151;
+        }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+            overflow-x: hidden;
+        }
+        /* Sidebar Styling */
+        #sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--sidebar-bg);
+            min-height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1040;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.15);
+        }
+        #sidebar .sidebar-brand {
+            padding: 1.25rem 1.5rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        #sidebar .sidebar-heading {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #9ca3af;
+            font-weight: 700;
+            padding: 1rem 1.5rem 0.4rem;
+        }
+        #sidebar .nav-link {
+            color: #d1d5db;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            font-weight: 500;
+            font-size: 0.92rem;
+            transition: all 0.2s ease;
+            border-left: 4px solid transparent;
+        }
+        #sidebar .nav-link:hover {
+            color: #ffffff;
+            background-color: var(--sidebar-hover);
+        }
+        #sidebar .nav-link.active {
+            color: #ffffff;
+            background-color: var(--sidebar-active);
+            border-left-color: var(--brand-color);
+            font-weight: 600;
+        }
+        #sidebar .nav-link i {
+            font-size: 1.15rem;
+            width: 24px;
+            text-align: center;
+        }
+        /* Topbar & Main Wrapper */
+        #main-wrapper {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #topbar {
+            height: var(--topbar-height);
+            background-color: #ffffff;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 0;
+            z-index: 1020;
+            padding: 0 1.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .content-body {
+            padding: 1.75rem;
+            flex-grow: 1;
+        }
+        /* User Avatar & Dropdowns */
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            font-size: 0.65rem;
+            padding: 0.25em 0.5em;
+        }
+        /* Responsive */
+        @@media (max-width: 991.98px) {
+            #sidebar {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+            #sidebar.show {
+                margin-left: 0;
+            }
+            #main-wrapper {
+                margin-left: 0;
+            }
+            #sidebar-backdrop {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background-color: rgba(0,0,0,0.5);
+                z-index: 1035;
+            }
+            #sidebar-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar-backdrop"></div>
+
+    <nav id="sidebar">
+        <div class="sidebar-brand">
+            <a class="d-flex align-items-center text-white text-decoration-none fw-bold fs-5" href="@Url.Action("Index", "Dashboard")">
+                <span class="d-inline-flex p-1 bg-success text-white rounded-3 me-2">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </span>
+                Conta<span class="text-success">Cloud</span>
+            </a>
+        </div>
+
+        <div class="py-3">
+            <div class="sidebar-heading">Principal</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link @(currentCtrl == "Dashboard" ? "active" : "")" href="@Url.Action("Index", "Dashboard")">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>Panel de Control</span>
+                    </a>
+                </li>
+            </ul>
+
+            @if (esContador)
+            {
+                <div class="sidebar-heading">Módulos Contables</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(currentCtrl == "PlanCuentas" || currentCtrl == "CuentasContables" ? "active" : "")" href="@Url.Action("Index", "PlanCuentas", new { area = "" })">
+                            <i class="bi bi-diagram-3-fill"></i>
+                            <span>Plan de Cuentas</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link @(currentCtrl == "AsientosContables" ? "active" : "")" href="@Url.Action("Index", "AsientosContables", new { area = "" })">
+                            <i class="bi bi-journal-check"></i>
+                            <span>Asientos Contables</span>
+                        </a>
+                    </li>
+                </ul>
+            }
+
+            @if (esLector || esContador)
+            {
+                <div class="sidebar-heading">Reportería</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(currentCtrl == "Reportes" ? "active" : "")" href="@Url.Action("Index", "Reportes", new { area = "" })">
+                            <i class="bi bi-file-earmark-bar-graph-fill"></i>
+                            <span>Reportes Contables</span>
+                        </a>
+                    </li>
+                </ul>
+            }
+
+            @if (esAdmin)
+            {
+                <div class="sidebar-heading">Administración</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link @(currentCtrl == "Usuarios" ? "active" : "")" href="@Url.Action("Index", "Usuarios")">
+                            <i class="bi bi-people-fill"></i>
+                            <span>Gestión de Usuarios</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link btn-sync-trigger text-warning" href="javascript:void(0);" title="Sincronizar bases de datos Atlas, Localhost y Respaldo JSON">
+                            <i class="bi bi-arrow-repeat text-warning"></i>
+                            <span>Sincronizar Bases</span>
+                        </a>
+                    </li>
+                </ul>
+            }
+
+            @if (esLector)
+            {
+                <div class="px-3 py-2 mt-2">
+                    <div class="p-2 rounded bg-dark border border-secondary border-opacity-25 small text-white-50">
+                        <div class="text-xs text-uppercase fw-bold text-success"><i class="bi bi-building me-1"></i>Empresa Asignada:</div>
+                        <div class="text-white fw-semibold text-truncate" title="@userEmpresa">@userEmpresa</div>
+                    </div>
+                </div>
+            }
+
+            <div class="sidebar-heading">Accesos</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white-50" href="@Url.Action("Index", "Home")" target="_blank">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                        <span>Ver Sitio Público</span>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-danger" href="@Url.Action("Logout", "Account")">
+                        <i class="bi bi-box-arrow-left text-danger"></i>
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div id="main-wrapper">
+        <header id="topbar">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-light d-lg-none me-2" id="btnToggleSidebar" type="button" aria-label="Abrir Menú">
+                    <i class="bi bi-list fs-5"></i>
+                </button>
+                <div class="d-none d-sm-block">
+                    <span class="text-muted small">Módulo actual:</span>
+                    <strong class="text-dark ms-1">@ViewBag.Title</strong>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                @if (esAdmin)
+                {
+                    <!-- Botón de Sincronización Avanzada (Auto-Healing Sync) EXCLUSIVO ADMIN -->
+                    <button type="button" class="btn btn-outline-success btn-sm rounded-pill fw-semibold shadow-xs d-flex align-items-center gap-2 px-3 py-1 btn-sync-trigger" title="Sincronizar y Restaurar Datos (Auto-Healing Sync)">
+                        <i class="bi bi-arrow-repeat fs-6"></i>
+                        <span class="d-none d-md-inline">Sincronizar y Restaurar</span>
+                    </button>
+                }
+
+                <div class="dropdown" id="notificacionesContainer">
+                    <button class="btn btn-light position-relative p-2 rounded-circle shadow-xs" type="button" id="dropdownNotificaciones" data-bs-toggle="dropdown" aria-expanded="false" title="Notificaciones">
+                        <i class="bi bi-bell-fill fs-5 text-secondary"></i>
+                        <span id="badgeNotificaciones" class="badge rounded-pill bg-danger notification-badge d-none">
+                            0
+                        </span>
+                    </button>
+                    <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 py-0" style="width: 350px;" aria-labelledby="dropdownNotificaciones">
+                        <div class="p-3 bg-light border-bottom rounded-top-4 d-flex justify-content-between align-items-center">
+                            <span class="fw-bold small text-dark"><i class="bi bi-bell-fill text-primary me-1"></i>Notificaciones</span>
+                            <span id="txtTotalNoLeidas" class="badge bg-success-subtle text-success small">0 no leídas</span>
+                        </div>
+                        <div id="listaNotificaciones" class="list-group list-group-flush small" style="max-height: 280px; overflow-y: auto;">
+                            <div class="text-center py-4 text-muted">
+                                <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+                                <div class="mt-1 small">Cargando notificaciones...</div>
+                            </div>
+                        </div>
+                        <div class="p-2 border-top bg-light rounded-bottom-4 d-flex justify-content-between align-items-center">
+                            <button type="button" id="btnMarcarTodasLeidas" class="btn btn-link btn-sm text-decoration-none small text-muted p-0">
+                                <i class="bi bi-check2-all me-1"></i>Marcar todas como leídas
+                            </button>
+                            <button type="button" id="btnGenerarNotificacionDemo" class="btn btn-outline-success btn-xs px-2 py-0" style="font-size: 0.72rem;" title="Generar alerta de prueba en MongoDB">
+                                + Demo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="vr my-2 text-secondary opacity-25"></div>
+
+                <div class="dropdown">
+                    <button class="btn btn-light d-flex align-items-center gap-2 p-1 pe-3 rounded-pill" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar bg-success text-white">
+                            @(Session["Nombre"] != null && Session["Nombre"].ToString().Length > 0 ? Session["Nombre"].ToString().Substring(0, 1).ToUpper() : "U")
+                        </div>
+                        <div class="text-start d-none d-md-block" style="line-height: 1.2;">
+                            <div class="fw-bold small text-dark">@(Session["Nombre"] ?? "Usuario")</div>
+                            <small class="badge bg-success-subtle text-success p-0 px-1" style="font-size: 0.68rem;">@(Session["Rol"] ?? "Usuario")</small>
+                        </div>
+                        <i class="bi bi-chevron-down small text-muted ms-1"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 rounded-3 mt-2" aria-labelledby="userDropdown">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="small fw-semibold text-dark">@(Session["Nombre"] ?? "Usuario")</div>
+                            <div class="text-muted small">@(Session["Correo"] ?? "")</div>
+                            <div class="text-success small fw-semibold"><i class="bi bi-building me-1"></i>@(Session["Empresa"] ?? "Empresa Principal S.A.")</div>
+                        </li>
+                        @if (esAdmin)
+                        {
+                            <li><a class="dropdown-item py-2" href="@Url.Action("Index", "Usuarios")"><i class="bi bi-person-gear me-2 text-secondary"></i>Gestión de Usuarios</a></li>
+                        }
+                        <li><a class="dropdown-item py-2" href="@Url.Action("Index", "Dashboard")"><i class="bi bi-speedometer2 me-2 text-secondary"></i>Métricas</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                            <a class="dropdown-item py-2 text-danger" href="@Url.Action("Logout", "Account")">
+                                <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </header>
+
+        <main class="content-body">
+            @if (TempData["MensajeExito"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill fs-5 me-2"></i>
+                    <div>@TempData["MensajeExito"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @if (TempData["MensajeError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-octagon-fill fs-5 me-2"></i>
+                    <div>@TempData["MensajeError"]</div>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+
+            @RenderBody()
+        </main>
+
+        <footer class="bg-white border-top py-3 px-4 text-center text-muted small mt-auto">
+            © @DateTime.Now.Year ContaCloud Intranet | Conectado a MongoDB (@(Session["Rol"] ?? "Usuario"))
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Sidebar Toggle
+            var btnToggle = document.getElementById("btnToggleSidebar");
+            var sidebar = document.getElementById("sidebar");
+            var backdrop = document.getElementById("sidebar-backdrop");
+
+            if (btnToggle && sidebar && backdrop) {
+                btnToggle.addEventListener("click", function () {
+                    sidebar.classList.toggle("show");
+                    backdrop.classList.toggle("show");
+                });
+
+                backdrop.addEventListener("click", function () {
+                    sidebar.classList.remove("show");
+                    backdrop.classList.remove("show");
+                });
+            }
+
+            // 2. Módulo de Notificaciones AJAX
+            var badgeNotif = document.getElementById("badgeNotificaciones");
+            var txtTotal = document.getElementById("txtTotalNoLeidas");
+            var listaNotif = document.getElementById("listaNotificaciones");
+            var btnMarcarTodas = document.getElementById("btnMarcarTodasLeidas");
+            var btnDemo = document.getElementById("btnGenerarNotificacionDemo");
+            var dropdownBtn = document.getElementById("dropdownNotificaciones");
+
+            function cargarNotificaciones() {
+                fetch('@Url.Action("ObtenerNoLeidas", "Notificaciones")', {
+                    method: "GET",
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                })
+                .then(function (res) { return res.json(); })
+                .then(function (data) {
+                    if (data && data.success) {
+                        var total = data.totalNoLeidas;
+                        if (total > 0) {
+                            badgeNotif.innerText = total > 99 ? "99+" : total;
+                            badgeNotif.classList.remove("d-none");
+                            txtTotal.innerText = total + " no leídas";
+                        } else {
+                            badgeNotif.classList.add("d-none");
+                            txtTotal.innerText = "0 no leídas";
+                        }
+
+                        // Renderizar lista
+                        if (data.notificaciones && data.notificaciones.length > 0) {
+                            var html = "";
+                            data.notificaciones.forEach(function (item) {
+                                html += '<div class="list-group-item list-group-item-action p-3 notification-item" data-id="' + item.id + '">';
+                                html += '  <div class="d-flex justify-content-between align-items-center mb-1">';
+                                html += '    <span class="badge ' + item.badgeCss + ' px-2 py-0">' + item.tipo + '</span>';
+                                html += '    <small class="text-muted" style="font-size: 0.72rem;">' + item.hace + '</small>';
+                                html += '  </div>';
+                                html += '  <div class="d-flex align-items-start gap-2">';
+                                html += '    <i class="bi ' + item.iconoCss + ' fs-6 mt-1 flex-shrink-0"></i>';
+                                html += '    <div class="flex-grow-1">';
+                                html += '      <p class="mb-1 text-dark small" style="line-height: 1.3;">' + item.mensaje + '</p>';
+                                html += '      <div class="d-flex justify-content-between align-items-center">';
+                                html += '        <small class="text-muted" style="font-size: 0.68rem;">' + item.fecha + '</small>';
+                                html += '        <button type="button" class="btn btn-link btn-sm text-primary p-0 btnMarcarIndividual" data-id="' + item.id + '" style="font-size: 0.72rem;">Marcar leída</button>';
+                                html += '      </div>';
+                                html += '    </div>';
+                                html += '  </div>';
+                                html += '</div>';
+                            });
+                            listaNotif.innerHTML = html;
+
+                            // Asociar eventos de marcado individual
+                            document.querySelectorAll(".btnMarcarIndividual").forEach(function (btn) {
+                                btn.addEventListener("click", function (e) {
+                                    e.stopPropagation();
+                                    var id = this.getAttribute("data-id");
+                                    marcarComoLeida(id);
+                                });
+                            });
+                        } else {
+                            listaNotif.innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-bell-slash fs-4 d-block mb-1 text-secondary opacity-50"></i><span class="small">No tienes notificaciones pendientes.</span></div>';
+                        }
+                    }
+                })
+                .catch(function (err) {
+                    console.error("Error al cargar notificaciones:", err);
+                });
+            }
+
+            function marcarComoLeida(id) {
+                var formData = new FormData();
+                formData.append("id", id);
+
+                fetch('@Url.Action("MarcarComoLeida", "Notificaciones")', {
+                    method: "POST",
+                    body: formData,
+                    headers: { "X-Requested-With": "XMLHttpRequest" }
+                })
+                .then(function (res) { return res.json(); })
+                .then(function () {
+                    cargarNotificaciones();
+                });
+            }
+
+            if (btnMarcarTodas) {
+                btnMarcarTodas.addEventListener("click", function () {
+                    fetch('@Url.Action("MarcarTodasComoLeidas", "Notificaciones")', {
+                        method: "POST",
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function () {
+                        cargarNotificaciones();
+                    });
+                });
+            }
+
+            if (btnDemo) {
+                btnDemo.addEventListener("click", function () {
+                    var tipos = ["Info", "Alerta", "Exito"];
+                    var tipoAleatorio = tipos[Math.floor(Math.random() * tipos.length)];
+                    var mensajes = [
+                        "Asiento contable #104 fue aprobado por el Auditor.",
+                        "Recuerde realizar el cierre fiscal del mes de agosto.",
+                        "Conexión con MongoDB Atlas verificada satisfactoriamente.",
+                        "Nueva cuenta contable agregada al Catálogo (1.1.05)."
+                    ];
+                    var mensajeAleatorio = mensajes[Math.floor(Math.random() * mensajes.length)];
+
+                    var formData = new FormData();
+                    formData.append("mensaje", mensajeAleatorio);
+                    formData.append("tipo", tipoAleatorio);
+
+                    fetch('@Url.Action("CrearDemo", "Notificaciones")', {
+                        method: "POST",
+                        body: formData,
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function () {
+                        cargarNotificaciones();
+                    });
+                });
+            }
+
+            if (dropdownBtn) {
+                dropdownBtn.addEventListener("show.bs.dropdown", function () {
+                    cargarNotificaciones();
+                });
+            }
+
+            // Carga inicial y refresco automático cada 30 segundos
+            cargarNotificaciones();
+            setInterval(cargarNotificaciones, 30000);
+
+            // =========================================================================
+            // MANEJADOR DE SINCRONIZACIÓN Y RESTAURACIÓN (AUTO-HEALING SYNC)
+            // =========================================================================
+            var syncModalEl = document.getElementById("modalAutoHealingSync");
+            var syncModal = syncModalEl ? new bootstrap.Modal(syncModalEl) : null;
+            var syncButtons = document.querySelectorAll(".btn-sync-trigger");
+
+            syncButtons.forEach(function (btn) {
+                btn.addEventListener("click", function () {
+                    var originalHtml = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Sincronizando...';
+
+                    // Mostrar estado cargando en el modal
+                    document.getElementById("syncLoading").classList.remove("d-none");
+                    document.getElementById("syncContent").classList.add("d-none");
+                    if (syncModal) syncModal.show();
+
+                    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value || "";
+                    var formData = new FormData();
+                    if (token) formData.append("__RequestVerificationToken", token);
+
+                    fetch('@Url.Action("EjecutarSincronizacion", "Admin")', {
+                        method: "POST",
+                        body: formData,
+                        headers: { "X-Requested-With": "XMLHttpRequest" }
+                    })
+                    .then(function (res) { return res.json(); })
+                    .then(function (data) {
+                        document.getElementById("syncLoading").classList.add("d-none");
+                        document.getElementById("syncContent").classList.remove("d-none");
+
+                        document.getElementById("syncFuente").innerText = data.fuenteUtilizada || "No determinada";
+                        document.getElementById("syncFecha").innerText = data.fechaDatosRestauradosEC || "No disponible";
+                        document.getElementById("syncAtlas").innerText = data.atlasEstado || "-";
+                        document.getElementById("syncLocal").innerText = data.localEstado || "-";
+                        document.getElementById("syncJson").innerText = data.jsonEstado || "-";
+
+                        document.getElementById("syncTotalDocs").innerText = data.totalDocumentos || "0";
+                        document.getElementById("syncMensaje").innerText = data.mensaje || "";
+
+                        if (data.success) {
+                            document.getElementById("syncAlert").className = "alert alert-success d-flex align-items-center mb-3";
+                            document.getElementById("syncIcon").className = "bi bi-check-circle-fill fs-4 me-2 text-success";
+                        } else {
+                            document.getElementById("syncAlert").className = "alert alert-danger d-flex align-items-center mb-3";
+                            document.getElementById("syncIcon").className = "bi bi-exclamation-octagon-fill fs-4 me-2 text-danger";
+                        }
+
+                        cargarNotificaciones();
+                    })
+                    .catch(function (err) {
+                        document.getElementById("syncLoading").classList.add("d-none");
+                        document.getElementById("syncContent").classList.remove("d-none");
+                        document.getElementById("syncMensaje").innerText = "Error de comunicación con el servidor: " + err.message;
+                        document.getElementById("syncAlert").className = "alert alert-danger d-flex align-items-center mb-3";
+                    })
+                    .finally(function () {
+                        btn.disabled = false;
+                        btn.innerHTML = originalHtml;
+                    });
+                });
+            });
+        });
+    </script>
+
+    <!-- Token AntiForgery Global para AJAX -->
+    <form id="formGlobalAntiforgery" class="d-none">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <!-- MODAL DE RESUMEN DE AUTO-HEALING SYNC -->
+    <div class="modal fade" id="modalAutoHealingSync" tabindex="-1" aria-labelledby="modalAutoHealingSyncLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="modal-header bg-success text-white py-3 px-4">
+                    <h5 class="modal-title fw-bold" id="modalAutoHealingSyncLabel">
+                        <i class="bi bi-arrow-repeat me-2"></i>Sincronización y Restauración de Datos
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Estado de Carga -->
+                    <div id="syncLoading" class="text-center py-4">
+                        <div class="spinner-border text-success" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h6 class="fw-bold mt-3 text-dark">Comparando marcas de tiempo...</h6>
+                        <p class="text-muted small mb-0">Auditando Atlas, Localhost y Respaldo en Escritorio (Hora Ecuador UTC-5)</p>
+                    </div>
+
+                    <!-- Contenido de Resumen -->
+                    <div id="syncContent" class="d-none">
+                        <div id="syncAlert" class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                            <i id="syncIcon" class="bi bi-check-circle-fill fs-4 me-2 text-success"></i>
+                            <div id="syncMensaje" class="small fw-semibold">Proceso finalizado.</div>
+                        </div>
+
+                        <div class="card bg-light border-0 rounded-3 p-3 mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="text-muted small">Fuente Válida Utilizada:</span>
+                                <span id="syncFuente" class="fw-bold text-dark font-monospace">Atlas</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="text-muted small">Fecha Datos Restaurados:</span>
+                                <span id="syncFecha" class="fw-bold text-primary font-monospace small">--/--/----</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+                                <span class="text-muted small">Total Documentos Al Día:</span>
+                                <span id="syncTotalDocs" class="badge bg-success fs-6">0</span>
+                            </div>
+                        </div>
+
+                        <h6 class="fw-bold small text-muted text-uppercase mb-2">Estado de Réplica por Destino:</h6>
+                        <ul class="list-group list-group-flush small rounded-3 border mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-cloud-check text-primary me-2"></i>MongoDB Atlas (Nube):</span>
+                                <span id="syncAtlas" class="fw-semibold text-dark">Al día</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-hdd-network text-success me-2"></i>MongoDB Localhost (27017):</span>
+                                <span id="syncLocal" class="fw-semibold text-dark">Al día</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-file-earmark-code text-warning me-2"></i>Archivo JSON (Escritorio):</span>
+                                <span id="syncJson" class="fw-semibold text-dark">Al día</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-4 border-0">
+                    <button type="button" class="btn btn-secondary btn-sm px-4 rounded-pill" data-bs-dismiss="modal">Cerrar</button>
+                    <button type="button" class="btn btn-success btn-sm px-4 rounded-pill" onclick="location.reload();">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refrescar Vista
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @RenderSection("scripts", required: false)
+</body>
+</html>

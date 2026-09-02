@@ -1,0 +1,126 @@
+﻿@model SistemaContable.Models.AsientoComprobanteDto
+@{
+    ViewBag.Title = "Comprobante de Asiento #" + Model.NumeroAsiento;
+    Layout = "~/Views/Shared/_LayoutIntranet.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm rounded-4 bg-white mb-4" id="comprobanteImprimible">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <span class="d-inline-flex p-2 bg-success text-white rounded-3 me-3">
+                        <i class="bi bi-journal-text fs-4"></i>
+                    </span>
+                    <div>
+                        <h4 class="mb-0 fw-bold">Comprobante de Diario</h4>
+                        <small class="text-muted">Asiento Contable N° <strong class="font-monospace text-dark">#@Model.NumeroAsiento</strong></small>
+                    </div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.print();">
+                        <i class="bi bi-printer me-1"></i>Imprimir
+                    </button>
+                    <a href="@Url.Action("Index", "AsientosContables")" class="btn btn-light btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Volver
+                    </a>
+                </div>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <!-- Metadatos de Cabecera -->
+                <div class="row g-3 p-4 bg-light rounded-4 border mb-4">
+                    <div class="col-sm-6 col-md-3">
+                        <div class="text-muted small">Fecha Contable:</div>
+                        <div class="fw-bold fs-6 mt-1">@Model.Fecha.ToString("dd/MM/yyyy")</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="text-muted small">Estado del Asiento:</div>
+                        <div class="mt-1">
+                            @if (Model.Estado == "Aprobado")
+                            {
+                                <span class="badge bg-success fs-6 px-3 py-1">Aprobado</span>
+                            }
+                            else if (Model.Estado == "Anulado")
+                            {
+                                <span class="badge bg-danger fs-6 px-3 py-1">Anulado</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark fs-6 px-3 py-1">Borrador</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="text-muted small">Registrado por:</div>
+                        <div class="fw-bold mt-1 text-dark"><i class="bi bi-person me-1"></i>@Model.NombreUsuario</div>
+                    </div>
+                    <div class="col-sm-6 col-md-3">
+                        <div class="text-muted small">ID de MongoDB:</div>
+                        <div class="font-monospace text-muted small mt-1">@Model.Id</div>
+                    </div>
+
+                    <div class="col-12 mt-3 pt-3 border-top">
+                        <div class="text-muted small">Concepto o Glosa:</div>
+                        <div class="fw-semibold fs-6 text-dark mt-1">@Model.Concepto</div>
+                    </div>
+                </div>
+
+                <!-- Tabla de Movimientos -->
+                <h5 class="fw-bold mb-3"><i class="bi bi-card-checklist text-primary me-2"></i>Movimientos de Cuentas</h5>
+                <div class="table-responsive mb-4">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 15%;">Código</th>
+                                <th style="width: 45%;">Cuenta Contable</th>
+                                <th style="width: 20%;" class="text-end">Debe</th>
+                                <th style="width: 20%;" class="text-end">Haber</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Lineas != null && Model.Lineas.Any())
+                            {
+                                foreach (var linea in Model.Lineas)
+                                {
+                                    <tr>
+                                        <td class="font-monospace fw-bold">@linea.CodigoCuenta</td>
+                                        <td>@linea.NombreCuenta</td>
+                                        <td class="text-end font-monospace">@(linea.Debe > 0 ? "$" + linea.Debe.ToString("N2") : "-")</td>
+                                        <td class="text-end font-monospace">@(linea.Haber > 0 ? "$" + linea.Haber.ToString("N2") : "-")</td>
+                                    </tr>
+                                }
+                            }
+                        </tbody>
+                        <tfoot class="table-light fw-bold fs-6">
+                            <tr>
+                                <td colspan="2" class="text-end text-uppercase">Sumas Iguales:</td>
+                                <td class="text-end font-monospace text-primary">$@Model.TotalDebe.ToString("N2")</td>
+                                <td class="text-end font-monospace text-primary">$@Model.TotalHaber.ToString("N2")</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Footer de Auditoría y Acciones -->
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top">
+                    <small class="text-muted">
+                        <i class="bi bi-shield-check text-success me-1"></i>Asiento validado por motor de Partida Doble en MongoDB.
+                    </small>
+
+                    @if (Model.Estado != "Anulado")
+                    {
+                        using (Html.BeginForm("Anular", "AsientosContables", new { id = Model.Id }, FormMethod.Post))
+                        {
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('¿Confirma la anulación del asiento #@Model.NumeroAsiento para propósitos de auditoría?');">
+                                <i class="bi bi-slash-circle me-1"></i>Anular Asiento
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,17 @@
+﻿## Visual Studio y caches
+.vs/
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.log
+
+## NuGet packages (Render los restaura con nuget restore)
+packages/*
+!packages/repositories.config
+
+## App_Data temporales (mantener estructura)
+App_Data/Respaldos/*
+!App_Data/Respaldos/placeholder.txt

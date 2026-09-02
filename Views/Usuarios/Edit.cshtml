@@ -1,0 +1,151 @@
+@model SistemaContable.Models.UsuarioFormViewModel
+@{
+    ViewBag.Title = "Editar Usuario";
+    Layout = "~/Views/Shared/_LayoutIntranet.cshtml";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm rounded-4 bg-white">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-pencil-square text-primary me-2"></i>Editar Usuario: <span class="text-dark">@Model.Nombre</span>
+                </h5>
+                <a href="@Url.Action("Index", "Usuarios")" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Volver al Listado
+                </a>
+            </div>
+
+            <div class="card-body p-4">
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2 flex-shrink-0"></i>
+                        <div>
+                            @Html.ValidationSummary(true, "", new { @class = "mb-0" })
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @using (Html.BeginForm("Edit", "Usuarios", FormMethod.Post, new { @class = "needs-validation", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.Id)
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label for="Nombre" class="form-label fw-semibold text-secondary">
+                                Nombre Completo <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Nombre, new { 
+                                @class = "form-control form-control-lg", 
+                                required = "required" 
+                            })
+                            @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="Correo" class="form-label fw-semibold text-secondary">
+                                Correo Electrónico <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Correo, new { 
+                                @class = "form-control", 
+                                type = "email", 
+                                required = "required" 
+                            })
+                            @Html.ValidationMessageFor(m => m.Correo, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="RolId" class="form-label fw-semibold text-secondary">
+                                Rol Asignado <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.RolId, Model.RolesDisponibles, "-- Seleccionar Rol --", new { 
+                                @class = "form-select", 
+                                required = "required" 
+                            })
+                            @Html.ValidationMessageFor(m => m.RolId, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-12">
+                            <label for="Empresa" class="form-label fw-semibold text-secondary">
+                                <i class="bi bi-building me-1"></i>Empresa Asignada <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Empresa, new { 
+                                @class = "form-control", 
+                                placeholder = "Ej: Corporación Andina S.A.", 
+                                required = "required" 
+                            })
+                            <small class="text-muted" style="font-size: 0.75rem;">Para usuarios Lectores, limita el acceso exclusivo a los reportes de esta empresa.</small>
+                            @Html.ValidationMessageFor(m => m.Empresa, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="p-3 bg-light rounded-3 border">
+                                <label for="Password" class="form-label fw-semibold text-secondary mb-1">
+                                    <i class="bi bi-key me-1"></i>Cambiar Contraseña (Opcional)
+                                </label>
+                                <div class="input-group">
+                                    @Html.PasswordFor(m => m.Password, new { 
+                                        @class = "form-control", 
+                                        placeholder = "Dejar en blanco para mantener la contraseña actual", 
+                                        id = "txtPassword" 
+                                    })
+                                    <button class="btn btn-outline-secondary" type="button" id="btnTogglePassword">
+                                        <i class="bi bi-eye" id="iconToggle"></i>
+                                    </button>
+                                </div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                    Si escribe una contraseña nueva, se aplicará el hash BCrypt antes de guardar en MongoDB.
+                                </small>
+                                @Html.ValidationMessageFor(m => m.Password, "", new { @class = "text-danger small mt-1 d-block" })
+                            </div>
+                        </div>
+
+                        <div class="col-md-12">
+                            <div class="form-check form-switch mt-2">
+                                @Html.CheckBoxFor(m => m.Estado, new { @class = "form-check-input", id = "chkEstado" })
+                                <label class="form-check-label fw-semibold text-secondary" for="chkEstado">
+                                    Usuario Activo
+                                </label>
+                                <small class="text-muted d-block" style="font-size: 0.75rem;">Al desmarcar, el usuario no podrá iniciar sesión en la Intranet.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index", "Usuarios")" class="btn btn-light px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-save me-1"></i>Actualizar Usuario
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var toggleBtn = document.getElementById("btnTogglePassword");
+        var pwdInput = document.getElementById("txtPassword");
+        var icon = document.getElementById("iconToggle");
+
+        if (toggleBtn && pwdInput && icon) {
+            toggleBtn.addEventListener("click", function () {
+                if (pwdInput.type === "password") {
+                    pwdInput.type = "text";
+                    icon.classList.remove("bi-eye");
+                    icon.classList.add("bi-eye-slash");
+                } else {
+                    pwdInput.type = "password";
+                    icon.classList.remove("bi-eye-slash");
+                    icon.classList.add("bi-eye");
+                }
+            });
+        }
+    });
+</script>

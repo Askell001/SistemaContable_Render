@@ -1,0 +1,101 @@
+﻿@model SistemaContable.Models.CuentaContable
+@{
+    ViewBag.Title = "Crear Cuenta Contable";
+    Layout = "~/Views/Shared/_LayoutIntranet.cshtml";
+    var tiposDisponibles = ViewBag.TiposDisponibles as List<SelectListItem>;
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 bg-white">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-plus-circle-fill text-success me-2"></i>Registrar Cuenta Contable
+                </h5>
+                <a href="@Url.Action("Index", "PlanCuentas")" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Volver al Catálogo
+                </a>
+            </div>
+
+            <div class="card-body p-4">
+                @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4" role="alert">
+                        <i class="bi bi-exclamation-triangle-fill fs-5 me-2 flex-shrink-0"></i>
+                        <div>
+                            @Html.ValidationSummary(true, "", new { @class = "mb-0" })
+                        </div>
+                        <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @using (Html.BeginForm("Create", "PlanCuentas", FormMethod.Post, new { @class = "needs-validation", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="row g-3">
+                        <div class="col-md-5">
+                            <label for="Codigo" class="form-label fw-semibold text-secondary">
+                                Código Jerárquico <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Codigo, new { 
+                                @class = "form-control font-monospace", 
+                                placeholder = "Ej: 1.1.01.01", 
+                                required = "required" 
+                            })
+                            <small class="text-muted" style="font-size: 0.72rem;">Debe ser único en el sistema.</small>
+                            @Html.ValidationMessageFor(m => m.Codigo, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-7">
+                            <label for="Nombre" class="form-label fw-semibold text-secondary">
+                                Nombre de la Cuenta <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Nombre, new { 
+                                @class = "form-control", 
+                                placeholder = "Ej: Banco de Crédito Cta. Cte.", 
+                                required = "required" 
+                            })
+                            @Html.ValidationMessageFor(m => m.Nombre, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="Tipo" class="form-label fw-semibold text-secondary">
+                                Clasificación / Tipo <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.Tipo, tiposDisponibles, "-- Seleccionar Tipo --", new { 
+                                @class = "form-select", 
+                                required = "required" 
+                            })
+                            @Html.ValidationMessageFor(m => m.Tipo, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="Nivel" class="form-label fw-semibold text-secondary">
+                                Nivel en el Catálogo <span class="text-danger">*</span>
+                            </label>
+                            @Html.TextBoxFor(m => m.Nivel, new { 
+                                @class = "form-control", 
+                                type = "number", 
+                                min = "1", 
+                                max = "10", 
+                                required = "required" 
+                            })
+                            <small class="text-muted" style="font-size: 0.72rem;">1: Clase, 2: Grupo, 3: Cuenta, 4+: Subcuentas</small>
+                            @Html.ValidationMessageFor(m => m.Nivel, "", new { @class = "text-danger small mt-1 d-block" })
+                        </div>
+                    </div>
+
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="@Url.Action("Index", "PlanCuentas")" class="btn btn-light px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-success px-4 fw-semibold shadow-sm">
+                            <i class="bi bi-check-lg me-1"></i>Guardar Cuenta
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

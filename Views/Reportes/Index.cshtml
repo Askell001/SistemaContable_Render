@@ -1,0 +1,259 @@
+@model SistemaContable.Models.FiltroReporteViewModel
+@{
+    ViewBag.Title = "Generador de Reportes Contables";
+    Layout = "~/Views/Shared/_LayoutIntranet.cshtml";
+}
+
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="h3 fw-bold mb-1">
+            <i class="bi bi-file-earmark-bar-graph-fill text-primary me-2"></i>Módulo de Reportes Contables
+        </h2>
+        <p class="text-muted mb-0 small">
+            Filtrado avanzado, auditoría de asientos y exportación simultánea a Excel, PDF y XML (Zona Horaria Ecuador UTC-5).
+        </p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="@Url.Action("Index", "Dashboard")" class="btn btn-outline-secondary shadow-sm">
+            <i class="bi bi-speedometer2 me-1"></i>Ir al Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- PANEL DE FILTRADO Y METADATOS -->
+<div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-primary-subtle text-primary p-2 rounded-circle">
+                <i class="bi bi-funnel-fill fs-6"></i>
+            </span>
+            <h6 class="mb-0 fw-bold text-dark">Criterios de Filtrado y Parámetros de Generación</h6>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2">
+                <i class="bi bi-building me-1"></i>Empresa: @Model.Empresa
+            </span>
+            <span class="badge bg-light text-muted border px-3 py-2">
+                <i class="bi bi-clock-history me-1"></i>Hora EC: @Model.FechaGeneracionEC.ToString("dd/MM/yyyy HH:mm:ss")
+            </span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        @using (Html.BeginForm("Index", "Reportes", FormMethod.Get, new { id = "formFiltro", @class = "row g-3 align-items-end" }))
+        {
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary">Fecha Inicio</label>
+                @Html.TextBoxFor(m => m.FechaInicio, "{0:yyyy-MM-dd}", new { @class = "form-control bg-light", type = "date" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary">Fecha Fin</label>
+                @Html.TextBoxFor(m => m.FechaFin, "{0:yyyy-MM-dd}", new { @class = "form-control bg-light", type = "date" })
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-secondary">Estado del Asiento</label>
+                @Html.DropDownListFor(m => m.Estado, new List<SelectListItem> {
+                    new SelectListItem { Value = "Todos", Text = "Todos los Estados" },
+                    new SelectListItem { Value = "Aprobado", Text = "Aprobado (Definitivo)" },
+                    new SelectListItem { Value = "Borrador", Text = "Borrador (Pendiente)" },
+                    new SelectListItem { Value = "Anulado", Text = "Anulado (Auditoría)" }
+                }, new { @class = "form-select bg-light" })
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm">
+                    <i class="bi bi-search me-1"></i>Filtrar Datos
+                </button>
+                <a href="@Url.Action("Index", "Reportes")" class="btn btn-outline-secondary" title="Limpiar Filtros">
+                    <i class="bi bi-arrow-counterclockwise"></i>
+                </a>
+            </div>
+        }
+
+        <hr class="my-4" />
+
+        <!-- BOTONES DE EXPORTACIÓN DIRECTA -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <span class="fw-bold text-dark d-block">Descargar Reportes en el Navegador:</span>
+                <small class="text-muted">Generación en memoria y descarga inmediata a tu equipo en formato Excel, PDF o XML.</small>
+            </div>
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- Exportar Excel -->
+                @using (Html.BeginForm("Exportar", "Reportes", FormMethod.Post, new { @class = "d-inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("fechaInicio", Model.FechaInicio.HasValue ? Model.FechaInicio.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("fechaFin", Model.FechaFin.HasValue ? Model.FechaFin.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("estado", Model.Estado)
+                    @Html.Hidden("formato", "excel")
+                    <button type="submit" class="btn btn-success fw-bold px-3 shadow-sm">
+                        <i class="bi bi-file-earmark-excel-fill me-1"></i>Descargar Excel (.xlsx)
+                    </button>
+                }
+
+                <!-- Exportar PDF -->
+                @using (Html.BeginForm("Exportar", "Reportes", FormMethod.Post, new { @class = "d-inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("fechaInicio", Model.FechaInicio.HasValue ? Model.FechaInicio.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("fechaFin", Model.FechaFin.HasValue ? Model.FechaFin.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("estado", Model.Estado)
+                    @Html.Hidden("formato", "pdf")
+                    <button type="submit" class="btn btn-danger fw-bold px-3 shadow-sm">
+                        <i class="bi bi-file-earmark-pdf-fill me-1"></i>Descargar PDF (.pdf)
+                    </button>
+                }
+
+                <!-- Exportar XML -->
+                @using (Html.BeginForm("Exportar", "Reportes", FormMethod.Post, new { @class = "d-inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("fechaInicio", Model.FechaInicio.HasValue ? Model.FechaInicio.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("fechaFin", Model.FechaFin.HasValue ? Model.FechaFin.Value.ToString("yyyy-MM-dd") : "")
+                    @Html.Hidden("estado", Model.Estado)
+                    @Html.Hidden("formato", "xml")
+                    <button type="submit" class="btn btn-warning fw-bold px-3 text-dark shadow-sm">
+                        <i class="bi bi-file-earmark-code-fill me-1"></i>Descargar XML (.xml)
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TARJETAS DE RESUMEN DE TOTALES -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-primary bg-opacity-10 text-primary rounded-4 me-3">
+                    <i class="bi bi-journals fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold">Asientos Encontrados</span>
+                    <h3 class="fw-bold mb-0 text-dark">@Model.TotalAsientos</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-success bg-opacity-10 text-success rounded-4 me-3">
+                    <i class="bi bi-arrow-down-left-circle-fill fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold">Gran Total DEBE</span>
+                    <h3 class="fw-bold mb-0 text-success">$@Model.TotalDebeGlobal.ToString("N2")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm rounded-4 bg-white p-3">
+            <div class="d-flex align-items-center">
+                <div class="p-3 bg-info bg-opacity-10 text-info rounded-4 me-3">
+                    <i class="bi bi-arrow-up-right-circle-fill fs-3"></i>
+                </div>
+                <div>
+                    <span class="text-muted small fw-semibold">Gran Total HABER</span>
+                    <h3 class="fw-bold mb-0 text-primary">$@Model.TotalHaberGlobal.ToString("N2")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TABLA PREVIA DE RESULTADOS -->
+<div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-table me-2"></i>Vista Previa de Asientos Contables Filtrados</h6>
+        <span class="badge bg-secondary-subtle text-secondary">@Model.TotalAsientos Registros</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>N° Póliza</th>
+                    <th>Fecha</th>
+                    <th>Concepto</th>
+                    <th>Empresa</th>
+                    <th>Estado</th>
+                    <th>Usuario Creador</th>
+                    <th>Cuentas y Movimientos</th>
+                    <th class="text-end">Total Debe</th>
+                    <th class="text-end">Total Haber</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.Asientos != null && Model.Asientos.Count > 0)
+                {
+                    foreach (var a in Model.Asientos)
+                    {
+                        <tr>
+                            <td class="fw-bold font-monospace text-primary">#@a.NumeroAsiento</td>
+                            <td>@a.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td>
+                                <div class="fw-semibold">@a.Concepto</div>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">
+                                    <i class="bi bi-building me-1 text-secondary"></i>@(string.IsNullOrEmpty(a.Empresa) ? "Empresa Principal S.A." : a.Empresa)
+                                </span>
+                            </td>
+                            <td>
+                                @if (a.Estado == "Aprobado")
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Aprobado</span>
+                                }
+                                else if (a.Estado == "Anulado")
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">Anulado</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">Borrador</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="small fw-semibold text-dark">@a.UsuarioCreadorNombre</div>
+                                <small class="text-muted" style="font-size:0.75rem;">@a.UsuarioCreadorCorreo</small>
+                            </td>
+                            <td>
+                                <div class="p-2 bg-light rounded-3 small">
+                                    @foreach (var d in a.Detalles)
+                                    {
+                                        <div class="d-flex justify-content-between gap-3 border-bottom py-1">
+                                            <span><strong>@d.CuentaCodigo</strong> - @d.CuentaNombre</span>
+                                            <span class="font-monospace text-nowrap">
+                                                @if (d.Debe > 0) { <span class="text-success fw-bold">D: $@d.Debe.ToString("N2")</span> }
+                                                @if (d.Haber > 0) { <span class="text-primary fw-bold">H: $@d.Haber.ToString("N2")</span> }
+                                            </span>
+                                        </div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="text-end font-monospace fw-bold text-success">$@a.TotalDebe.ToString("N2")</td>
+                            <td class="text-end font-monospace fw-bold text-primary">$@a.TotalHaber.ToString("N2")</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="8" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                            No se encontraron asientos contables que coincidan con los filtros seleccionados.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light fw-bold">
+                <tr>
+                    <td colspan="6" class="text-end text-uppercase">Sumas Totales del Reporte:</td>
+                    <td class="text-end font-monospace text-success fs-6">$@Model.TotalDebeGlobal.ToString("N2")</td>
+                    <td class="text-end font-monospace text-primary fs-6">$@Model.TotalHaberGlobal.ToString("N2")</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>

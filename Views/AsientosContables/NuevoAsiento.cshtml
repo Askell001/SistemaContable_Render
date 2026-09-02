@@ -1,0 +1,722 @@
+@model SistemaContable.Models.AsientoFormViewModel
+@{
+    ViewBag.Title = "Nuevo Asiento Contable";
+    Layout = "~/Views/Shared/_LayoutIntranet.cshtml";
+    var cuentas = Model.CuentasDisponibles as IEnumerable<SelectListItem> ?? new List<SelectListItem>();
+    string cuentasJson = ViewBag.CuentasJson as string ?? "[]";
+}
+
+<div class="row justify-content-center">
+    <div class="col-xl-11">
+        <!-- Encabezado -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="h3 fw-bold mb-1">
+                    <i class="bi bi-journal-plus text-success me-2"></i>Registrar Asiento Contable (Póliza de Diario)
+                </h2>
+                <p class="text-muted mb-0 small">
+                    Asistente automatizado con plantillas guiadas y validación estricta de Partida Doble en tiempo real.
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="@Url.Action("Index", "AsientosContables")" class="btn btn-outline-secondary shadow-sm">
+                    <i class="bi bi-arrow-left me-1"></i>Volver al Historial
+                </a>
+            </div>
+        </div>
+
+        @if (!ViewData.ModelState.IsValid && ViewData.ModelState[""] != null && ViewData.ModelState[""].Errors.Count > 0)
+        {
+            <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-4 shadow-sm" role="alert">
+                <i class="bi bi-exclamation-triangle-fill fs-4 me-3 flex-shrink-0"></i>
+                <div>
+                    @Html.ValidationSummary(true, "", new { @class = "mb-0 fw-semibold" })
+                </div>
+                <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+
+        <!-- SECCIÓN 1: ASISTENTE GUIADO Y PLANTILLAS RÁPIDAS -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white mb-4 overflow-hidden">
+            <div class="card-header bg-success-subtle border-0 py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success p-2 rounded-circle">
+                        <i class="bi bi-magic fs-6 text-white"></i>
+                    </span>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-success-emphasis">Guía y Plantillas Automatizadas de Asientos</h6>
+                        <small class="text-muted">Selecciona una operación frecuente para auto-completar y balancear las cuentas en 1 clic</small>
+                    </div>
+                </div>
+                <button class="btn btn-sm btn-outline-success fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#panelPlantillas" aria-expanded="true">
+                    <i class="bi bi-chevron-down" id="iconTogglePlantillas"></i> Alternar Asistente
+                </button>
+            </div>
+
+            <div class="collapse show" id="panelPlantillas">
+                <div class="card-body p-4">
+                    <!-- Selector de Operaciones Frecuentes -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-primary w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="venta">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-cart-check-fill fs-4 text-primary"></i>
+                                    <span class="badge bg-primary-subtle text-primary small">Ingreso</span>
+                                </div>
+                                <div class="fw-bold text-dark">Venta de Mercaderías</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Caja/Bancos + Ventas + IGV/IVA</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-danger w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="compra">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-bag-plus-fill fs-4 text-danger"></i>
+                                    <span class="badge bg-danger-subtle text-danger small">Egreso</span>
+                                </div>
+                                <div class="fw-bold text-dark">Compra de Mercaderías</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Inventario + IGV/IVA Crédito + Proveedores/Caja</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-warning w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="servicio">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-lightning-charge-fill fs-4 text-warning"></i>
+                                    <span class="badge bg-warning-subtle text-warning small">Gasto</span>
+                                </div>
+                                <div class="fw-bold text-dark">Pago de Servicios / Alquiler</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Servicios Terceros + Caja/Bancos</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-success w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="cobro">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-cash-stack fs-4 text-success"></i>
+                                    <span class="badge bg-success-subtle text-success small">Cobro</span>
+                                </div>
+                                <div class="fw-bold text-dark">Cobro a Clientes</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Caja/Bancos vs Cuentas por Cobrar</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-info w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="pago-proveedor">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-credit-card-2-front-fill fs-4 text-info"></i>
+                                    <span class="badge bg-info-subtle text-info small">Pago</span>
+                                </div>
+                                <div class="fw-bold text-dark">Pago a Proveedores</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Cuentas por Pagar vs Bancos/Caja</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-secondary w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="sueldos">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-people-fill fs-4 text-secondary"></i>
+                                    <span class="badge bg-secondary-subtle text-secondary small">Nómina</span>
+                                </div>
+                                <div class="fw-bold text-dark">Pago de Sueldos y Planilla</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Gastos Personal vs Bancos</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-dark w-100 p-3 text-start h-100 rounded-3 btn-plantilla" data-tipo="capital">
+                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                    <i class="bi bi-bank fs-4 text-dark"></i>
+                                    <span class="badge bg-dark-subtle text-dark small">Patrimonio</span>
+                                </div>
+                                <div class="fw-bold text-dark">Aporte de Capital / Socios</div>
+                                <small class="text-muted d-block mt-1" style="font-size: 0.78rem;">Bancos/Caja vs Capital Social</small>
+                            </button>
+                        </div>
+
+                        <div class="col-md-4 col-lg-3">
+                            <button type="button" class="btn btn-outline-secondary w-100 p-3 text-center h-100 rounded-3 d-flex flex-column justify-content-center align-items-center" id="btnModoLibre">
+                                <i class="bi bi-pencil-square fs-3 text-secondary mb-1"></i>
+                                <div class="fw-bold text-dark">Registro Manual Libre</div>
+                                <small class="text-muted" style="font-size: 0.78rem;">Ingresar cuentas manualmente</small>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Mini Formulario del Asistente -->
+                    <div id="boxConfiguradorPlantilla" class="p-3 bg-light border border-success border-opacity-50 rounded-3 d-none">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0 text-success" id="lblTituloPlantilla">
+                                <i class="bi bi-sliders me-1"></i>Configurador Rápido de la Operación
+                            </h6>
+                            <button type="button" class="btn-close btn-sm" id="btnCerrarConfigurador" aria-label="Cerrar"></button>
+                        </div>
+
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Monto Total de la Operación ($)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" step="0.01" min="0.01" id="txtMontoPlantilla" class="form-control fw-bold font-monospace" placeholder="1000.00" value="1000.00" />
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold text-secondary">Medio de Pago / Cobro</label>
+                                <select id="cboMedioPago" class="form-select">
+                                    <option value="efectivo">Efectivo (Caja General)</option>
+                                    <option value="banco" selected>Transferencia Bancaria (Bancos)</option>
+                                    <option value="credito">Al Crédito (Clientes / Proveedores)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" id="colOpcionImpuesto">
+                                <div class="form-check p-2 bg-white rounded border">
+                                    <input class="form-check-input ms-1" type="checkbox" id="chkDesglosarImpuesto" checked />
+                                    <label class="form-check-label small fw-semibold text-dark ms-2" for="chkDesglosarImpuesto">Desglosar Impuesto (IGV / IVA 18%)</label>
+                                </div>
+                            </div>
+                            <div class="col-12 text-end mt-2">
+                                <button type="button" class="btn btn-success px-4 fw-bold shadow-sm" id="btnAplicarPlantilla">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Generar y Cargar Asiento
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: FORMULARIO PRINCIPAL -->
+        <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+            <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary p-2 rounded-circle">
+                        <i class="bi bi-card-checklist fs-6 text-white"></i>
+                    </span>
+                    <div>
+                        <h6 class="mb-0 fw-bold text-dark">Detalle del Comprobante y Movimientos</h6>
+                        <small class="text-muted">Verifica las cuentas y montos asignados antes de guardar</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card-body p-4">
+                @using (Html.BeginForm("NuevoAsiento", "AsientosContables", FormMethod.Post, new { id = "formAsiento", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3 p-3 bg-light rounded-4 border mb-4">
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">N° Asiento</label>
+                            @Html.TextBoxFor(m => m.NumeroAsiento, new { @class = "form-control fw-bold font-monospace bg-white", @readonly = "readonly" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Fecha Contable <span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.Fecha, "{0:yyyy-MM-dd}", new { @class = "form-control bg-white", type = "date", required = "required" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Tipo de Póliza <span class="text-danger">*</span></label>
+                            @Html.DropDownListFor(m => m.Tipo, new List<SelectListItem> { 
+                                new SelectListItem { Value = "Ingreso", Text = "Ingreso (Cobros y Ventas)" }, 
+                                new SelectListItem { Value = "Egreso", Text = "Egreso (Pagos y Compras)" }, 
+                                new SelectListItem { Value = "Diario", Text = "Diario (Operaciones Internas)" } 
+                            }, new { @class = "form-select bg-white", id = "cboTipoAsiento" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold text-secondary">Estado Inicial <span class="text-danger">*</span></label>
+                            @Html.DropDownListFor(m => m.Estado, new List<SelectListItem> { 
+                                new SelectListItem { Value = "Aprobado", Text = "Aprobado (Definitivo)" }, 
+                                new SelectListItem { Value = "Borrador", Text = "Borrador (Pendiente)" } 
+                            }, new { @class = "form-select bg-white" })
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label small fw-bold text-secondary">Concepto / Glosa <span class="text-danger">*</span></label>
+                            @Html.TextBoxFor(m => m.Concepto, new { @class = "form-control bg-white", id = "txtConcepto", placeholder = "Ej: Venta de mercaderías según Factura...", required = "required" })
+                            @Html.ValidationMessageFor(m => m.Concepto, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-table me-1"></i>Movimientos de Partida Doble</h6>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-primary btn-sm px-3" id="btnAgregarFila">
+                                <i class="bi bi-plus-circle-fill me-1"></i>Agregar Fila
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm px-3" id="btnAutoCuadrar">
+                                <i class="bi bi-lightning-charge-fill me-1"></i>Autocuadrar Diferencia
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered table-hover align-middle mb-0" id="tablaDetalles">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th style="min-width: 340px;">Cuenta Contable (Catálogo) <span class="text-danger">*</span></th>
+                                    <th style="width: 180px;" class="text-end text-success">DEBE ($)</th>
+                                    <th style="width: 180px;" class="text-end text-primary">HABER ($)</th>
+                                    <th style="width: 70px;" class="text-center">Quitar</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filasDetalle">
+                                <!-- Filas dinámicas -->
+                            </tbody>
+                            <tfoot class="table-light fw-bold">
+                                <tr>
+                                    <td class="text-end text-uppercase">Sumas Totales:</td>
+                                    <td class="text-end font-monospace text-success fs-5">$<span id="lblTotalDebe">0.00</span></td>
+                                    <td class="text-end font-monospace text-primary fs-5">$<span id="lblTotalHaber">0.00</span></td>
+                                    <td></td>
+                                </tr>
+                                <tr>
+                                    <td class="text-end text-secondary small">Estado del Balance:</td>
+                                    <td colspan="2" class="text-center font-monospace" id="columnaDiferencia">
+                                        <span class="badge bg-danger fs-6 px-3 py-2" id="badgeDiferencia">Descuadre: $0.00</span>
+                                    </td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div id="alertaBalance" class="alert alert-warning d-flex align-items-center py-3 px-4 mb-4 rounded-4 shadow-xs">
+                        <i class="bi bi-info-circle-fill me-3 fs-3 flex-shrink-0" id="iconoAlerta"></i>
+                        <div class="flex-grow-1">
+                            <span id="tituloBalance" class="fw-bold d-block">Verificando Balance...</span>
+                            <small id="mensajeBalance" class="text-muted d-block">El asiento requiere al menos 2 cuentas seleccionadas y el balance debe ser exactamente 0.00.</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 pt-2 border-top">
+                        <a href="@Url.Action("Index", "AsientosContables")" class="btn btn-light px-4">Cancelar</a>
+                        <button type="submit" class="btn btn-success px-5 py-2 fw-bold shadow" id="btnGuardarAsiento" disabled>
+                            <i class="bi bi-check2-circle me-1"></i>Guardar Asiento Contable
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<select id="templateCuentas" class="d-none">
+    <option value="">-- Seleccionar Cuenta Contable --</option>
+    @foreach (var c in cuentas) 
+    { 
+        <option value="@c.Value">@c.Text</option> 
+    }
+</select>
+
+@section scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        var cuentasDisponibles = [];
+        try {
+            cuentasDisponibles = @Html.Raw(cuentasJson);
+        } catch (e) {
+            cuentasDisponibles = [];
+        }
+
+        var tbody = document.getElementById("filasDetalle");
+        var btnAgregar = document.getElementById("btnAgregarFila");
+        var btnAutoCuadrar = document.getElementById("btnAutoCuadrar");
+        var lblDebe = document.getElementById("lblTotalDebe");
+        var lblHaber = document.getElementById("lblTotalHaber");
+        var badgeDif = document.getElementById("badgeDiferencia");
+        var alerta = document.getElementById("alertaBalance");
+        var tituloBalance = document.getElementById("tituloBalance");
+        var mensajeBalance = document.getElementById("mensajeBalance");
+        var iconoAlerta = document.getElementById("iconoAlerta");
+        var btnGuardar = document.getElementById("btnGuardarAsiento");
+        var templateOptions = document.getElementById("templateCuentas").innerHTML;
+
+        var filaIndex = 0;
+
+        // Búsqueda inteligente de cuenta con múltiples caídas de seguridad
+        function buscarCuentaId(codigoPrefijo, nombreFiltro, tipoFiltro) {
+            // 1. Buscar en arreglo JSON por código exacto o inicial
+            if (cuentasDisponibles && cuentasDisponibles.length > 0) {
+                if (codigoPrefijo) {
+                    for (var i = 0; i < cuentasDisponibles.length; i++) {
+                        var c = cuentasDisponibles[i];
+                        if (c.codigo && (c.codigo === codigoPrefijo || c.codigo.indexOf(codigoPrefijo) === 0)) {
+                            return c.id;
+                        }
+                    }
+                }
+                // 2. Buscar por nombre o palabra clave
+                if (nombreFiltro) {
+                    var nLower = nombreFiltro.toLowerCase();
+                    for (var j = 0; j < cuentasDisponibles.length; j++) {
+                        var c2 = cuentasDisponibles[j];
+                        if (c2.nombre && c2.nombre.toLowerCase().indexOf(nLower) >= 0) {
+                            return c2.id;
+                        }
+                    }
+                }
+                // 3. Buscar por tipo (Activo, Pasivo, etc.)
+                if (tipoFiltro) {
+                    var tLower = tipoFiltro.toLowerCase();
+                    for (var k = 0; k < cuentasDisponibles.length; k++) {
+                        var c3 = cuentasDisponibles[k];
+                        if (c3.tipo && c3.tipo.toLowerCase().indexOf(tLower) >= 0) {
+                            return c3.id;
+                        }
+                    }
+                }
+            }
+
+            // 4. Buscar en las opciones del <select> renderizado por Razor
+            var opts = document.getElementById("templateCuentas").options;
+            for (var m = 0; m < opts.length; m++) {
+                var txt = opts[m].text.toLowerCase();
+                var val = opts[m].value;
+                if (!val) continue;
+
+                if (codigoPrefijo && txt.indexOf(codigoPrefijo.toLowerCase()) >= 0) return val;
+                if (nombreFiltro && txt.indexOf(nombreFiltro.toLowerCase()) >= 0) return val;
+                if (tipoFiltro && txt.indexOf(tipoFiltro.toLowerCase()) >= 0) return val;
+            }
+
+            // 5. Fallback: retornar la primera opción con valor válido
+            for (var n = 0; n < opts.length; n++) {
+                if (opts[n].value) return opts[n].value;
+            }
+
+            return "";
+        }
+
+        function crearFila(id, d, h) {
+            d = (d !== undefined && d !== null) ? d : "0.00";
+            h = (h !== undefined && h !== null) ? h : "0.00";
+            if (typeof d === "number") d = d.toFixed(2);
+            if (typeof h === "number") h = h.toFixed(2);
+
+            var tr = document.createElement("tr");
+            tr.className = "fila-movimiento";
+
+            var html = '';
+            html += '<td>';
+            html += '  <select name="Detalles[' + filaIndex + '].CuentaId" class="form-select select-cuenta" required>';
+            html += templateOptions;
+            html += '  </select>';
+            html += '</td>';
+            html += '<td>';
+            html += '  <div class="input-group input-group-sm">';
+            html += '    <span class="input-group-text">$</span>';
+            html += '    <input type="number" step="0.01" min="0" name="Detalles[' + filaIndex + '].Debe" class="form-control text-end font-monospace input-debe fw-bold text-success" value="' + d + '" />';
+            html += '  </div>';
+            html += '</td>';
+            html += '<td>';
+            html += '  <div class="input-group input-group-sm">';
+            html += '    <span class="input-group-text">$</span>';
+            html += '    <input type="number" step="0.01" min="0" name="Detalles[' + filaIndex + '].Haber" class="form-control text-end font-monospace input-haber fw-bold text-primary" value="' + h + '" />';
+            html += '  </div>';
+            html += '</td>';
+            html += '<td class="text-center">';
+            html += '  <button type="button" class="btn btn-outline-danger btn-sm btnEliminarFila" title="Quitar Fila"><i class="bi bi-trash"></i></button>';
+            html += '</td>';
+
+            tr.innerHTML = html;
+
+            var selectEl = tr.querySelector(".select-cuenta");
+            if (id && selectEl) {
+                selectEl.value = id;
+            }
+
+            var inpD = tr.querySelector(".input-debe");
+            var inpH = tr.querySelector(".input-haber");
+
+            inpD.addEventListener("input", function () {
+                if (parseFloat(this.value) > 0) inpH.value = "0.00";
+                calcularTotales();
+            });
+
+            inpH.addEventListener("input", function () {
+                if (parseFloat(this.value) > 0) inpD.value = "0.00";
+                calcularTotales();
+            });
+
+            selectEl.addEventListener("change", function () {
+                calcularTotales();
+            });
+
+            tr.querySelector(".btnEliminarFila").addEventListener("click", function () {
+                var filas = tbody.querySelectorAll(".fila-movimiento");
+                if (filas.length <= 2) {
+                    alert("Un asiento contable requiere al menos dos líneas de detalle.");
+                    return;
+                }
+                tr.remove();
+                reindexarFilas();
+                calcularTotales();
+            });
+
+            tbody.appendChild(tr);
+            filaIndex++;
+        }
+
+        function reindexarFilas() {
+            var filas = tbody.querySelectorAll(".fila-movimiento");
+            filas.forEach(function (fila, idx) {
+                var s = fila.querySelector(".select-cuenta");
+                var d = fila.querySelector(".input-debe");
+                var h = fila.querySelector(".input-haber");
+                if (s) s.setAttribute("name", "Detalles[" + idx + "].CuentaId");
+                if (d) d.setAttribute("name", "Detalles[" + idx + "].Debe");
+                if (h) h.setAttribute("name", "Detalles[" + idx + "].Haber");
+            });
+            filaIndex = filas.length;
+        }
+
+        function calcularTotales() {
+            var totalDebe = 0;
+            var totalHaber = 0;
+            var lineasConImporte = 0;
+            var lineasSinCuenta = 0;
+
+            var filas = tbody.querySelectorAll(".fila-movimiento");
+            filas.forEach(function (fila) {
+                var sel = fila.querySelector(".select-cuenta");
+                var d = parseFloat(fila.querySelector(".input-debe").value) || 0;
+                var h = parseFloat(fila.querySelector(".input-haber").value) || 0;
+
+                if (d > 0 || h > 0) {
+                    lineasConImporte++;
+                    if (!sel || !sel.value) {
+                        lineasSinCuenta++;
+                        if (sel) sel.classList.add("is-invalid", "border-danger");
+                    } else {
+                        if (sel) sel.classList.remove("is-invalid", "border-danger");
+                    }
+                } else {
+                    if (sel) sel.classList.remove("is-invalid", "border-danger");
+                }
+
+                totalDebe += d;
+                totalHaber += h;
+            });
+
+            var dif = Math.abs(totalDebe - totalHaber);
+            lblDebe.innerText = totalDebe.toFixed(2);
+            lblHaber.innerText = totalHaber.toFixed(2);
+
+            var ok = (dif < 0.001) && (totalDebe > 0) && (lineasConImporte >= 2) && (lineasSinCuenta === 0);
+
+            if (ok) {
+                badgeDif.className = "badge bg-success fs-6 px-3 py-2";
+                badgeDif.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> Balance Cuadrado: $0.00';
+                alerta.className = "alert alert-success d-flex align-items-center py-3 px-4 mb-4 rounded-4 shadow-xs";
+                iconoAlerta.className = "bi bi-check-circle-fill me-3 fs-3 text-success flex-shrink-0";
+                tituloBalance.innerText = "¡Partida Doble Cuadrada Exitosamente ($" + totalDebe.toFixed(2) + ")!";
+                mensajeBalance.innerText = "Todas las cuentas están asignadas y equilibradas. Listo para guardar.";
+                btnGuardar.removeAttribute("disabled");
+            } else {
+                badgeDif.className = "badge bg-danger fs-6 px-3 py-2";
+                badgeDif.innerHTML = '<i class="bi bi-exclamation-octagon-fill me-1"></i> Descuadre: $' + dif.toFixed(2);
+                alerta.className = "alert alert-warning d-flex align-items-center py-3 px-4 mb-4 rounded-4 shadow-xs";
+                iconoAlerta.className = "bi bi-exclamation-triangle-fill me-3 fs-3 text-warning flex-shrink-0";
+                tituloBalance.innerText = "Asiento Pendiente de Balance o Cuenta";
+
+                if (lineasSinCuenta > 0) {
+                    mensajeBalance.innerText = "⚠️ Hay movimientos con importe pero sin cuenta contable seleccionada. Seleccione la cuenta en cada fila resaltada.";
+                } else if (totalDebe === 0 && totalHaber === 0) {
+                    mensajeBalance.innerText = "Selecciona una plantilla guiada arriba o ingresa los importes en el Debe y el Haber.";
+                } else if (lineasConImporte < 2) {
+                    mensajeBalance.innerText = "Debe registrar al menos 2 cuentas con montos válidos (una con Debe y otra con Haber).";
+                } else {
+                    if (totalDebe > totalHaber) {
+                        mensajeBalance.innerText = "Falta registrar $" + dif.toFixed(2) + " en el HABER o presiona 'Autocuadrar Diferencia'.";
+                    } else {
+                        mensajeBalance.innerText = "Falta registrar $" + dif.toFixed(2) + " en el DEBE o presiona 'Autocuadrar Diferencia'.";
+                    }
+                }
+                btnGuardar.setAttribute("disabled", "disabled");
+            }
+        }
+
+        btnAutoCuadrar.addEventListener("click", function () {
+            var tD = parseFloat(lblDebe.innerText) || 0;
+            var tH = parseFloat(lblHaber.innerText) || 0;
+            var dif = Math.abs(tD - tH);
+            if (dif < 0.001) {
+                alert("El asiento ya se encuentra perfectamente cuadrado ($0.00).");
+                return;
+            }
+            if (tD > tH) {
+                var cPasivo = buscarCuentaId("2.1", "proveedor", "pasivo");
+                crearFila(cPasivo, 0, dif);
+            } else {
+                var cActivo = buscarCuentaId("1.1", "caja", "activo");
+                crearFila(cActivo, dif, 0);
+            }
+            calcularTotales();
+        });
+
+        btnAgregar.addEventListener("click", function () {
+            crearFila();
+            calcularTotales();
+        });
+
+        // ==========================================
+        // GESTOR DE PLANTILLAS FRECUENTES
+        // ==========================================
+        var plantillaActual = "";
+        var boxConfigurador = document.getElementById("boxConfiguradorPlantilla");
+        var lblTitulo = document.getElementById("lblTituloPlantilla");
+        var txtMonto = document.getElementById("txtMontoPlantilla");
+        var cboMedio = document.getElementById("cboMedioPago");
+        var chkImpuesto = document.getElementById("chkDesglosarImpuesto");
+        var colImpuesto = document.getElementById("colOpcionImpuesto");
+        var txtConcepto = document.getElementById("txtConcepto");
+        var cboTipo = document.getElementById("cboTipoAsiento");
+
+        var titulos = {
+            "venta": "🛒 Plantilla: Venta de Mercaderías / Servicios",
+            "compra": "📦 Plantilla: Compra de Mercaderías con Factura",
+            "servicio": "💡 Plantilla: Pago de Servicios Básicos / Alquileres",
+            "cobro": "💵 Plantilla: Cobro a Clientes / Cuentas por Cobrar",
+            "pago-proveedor": "🤝 Plantilla: Pago a Proveedores / Cuentas por Pagar",
+            "sueldos": "👥 Plantilla: Pago de Sueldos y Planilla del Personal",
+            "capital": "🏦 Plantilla: Aporte de Capital Social por Socios"
+        };
+
+        var glosas = {
+            "venta": "Venta de mercaderías según factura / boleta de venta",
+            "compra": "Compra de mercaderías para existencias según factura",
+            "servicio": "Pago mensual de servicios básicos (luz, agua, internet o alquiler)",
+            "cobro": "Cobranza de facturas a clientes mediante abono",
+            "pago-proveedor": "Cancelación de facturas a proveedores",
+            "sueldos": "Pago de nómina y sueldos del personal",
+            "capital": "Aporte de capital social por los socios"
+        };
+
+        var tiposAsiento = {
+            "venta": "Ingreso",
+            "compra": "Egreso",
+            "servicio": "Egreso",
+            "cobro": "Ingreso",
+            "pago-proveedor": "Egreso",
+            "sueldos": "Egreso",
+            "capital": "Ingreso"
+        };
+
+        document.querySelectorAll(".btn-plantilla").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var tipo = this.getAttribute("data-tipo");
+                plantillaActual = tipo;
+
+                document.querySelectorAll(".btn-plantilla").forEach(function (b) {
+                    b.classList.remove("active", "border-2", "shadow-sm");
+                });
+                this.classList.add("active", "border-2", "shadow-sm");
+
+                boxConfigurador.classList.remove("d-none");
+                lblTitulo.innerHTML = '<i class="bi bi-sliders me-1"></i>' + (titulos[tipo] || "Configurar Operación");
+
+                if (tipo === "venta" || tipo === "compra") {
+                    colImpuesto.classList.remove("d-none");
+                } else {
+                    colImpuesto.classList.add("d-none");
+                }
+
+                if (glosas[tipo]) txtConcepto.value = glosas[tipo];
+                if (tiposAsiento[tipo]) cboTipo.value = tiposAsiento[tipo];
+
+                boxConfigurador.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            });
+        });
+
+        document.getElementById("btnCerrarConfigurador").addEventListener("click", function () {
+            boxConfigurador.classList.add("d-none");
+        });
+
+        document.getElementById("btnModoLibre").addEventListener("click", function () {
+            boxConfigurador.classList.add("d-none");
+            tbody.innerHTML = "";
+            filaIndex = 0;
+            crearFila();
+            crearFila();
+            calcularTotales();
+        });
+
+        document.getElementById("btnAplicarPlantilla").addEventListener("click", function () {
+            var m = parseFloat(txtMonto.value) || 0;
+            if (m <= 0) {
+                alert("Por favor ingrese un monto mayor a 0.");
+                txtMonto.focus();
+                return;
+            }
+
+            var medio = cboMedio.value;
+            var conImp = chkImpuesto.checked;
+            tbody.innerHTML = "";
+            filaIndex = 0;
+
+            // Búsqueda exhaustiva con prefijos, palabras y tipos
+            var idCaja = buscarCuentaId("1.1.01", "caja", "activo");
+            var idBanco = buscarCuentaId("1.1.03", "banco", "activo");
+            var idClientes = buscarCuentaId("1.1.05", "cliente", "activo");
+            var idInventario = buscarCuentaId("1.1.06", "mercader", "activo");
+            var idImpuesto = buscarCuentaId("2.1.01", "tributo", "pasivo");
+            var idProveedores = buscarCuentaId("2.1.03", "proveedor", "pasivo");
+            var idCapital = buscarCuentaId("3.1.01", "capital", "patrimonio");
+            var idVentas = buscarCuentaId("4.1.01", "venta", "ingreso");
+            var idServicios = buscarCuentaId("5.1.03", "servicio", "gasto");
+            var idSueldos = buscarCuentaId("5.1.02", "personal", "gasto");
+
+            var idDinero = (medio === "banco") ? (idBanco || idCaja) : ((medio === "credito") ? (idClientes || idCaja) : idCaja);
+            var idPago = (medio === "banco") ? (idBanco || idCaja) : ((medio === "credito") ? (idProveedores || idCaja) : idCaja);
+
+            if (plantillaActual === "venta") {
+                if (conImp) {
+                    var base = m / 1.18;
+                    var igv = m - base;
+                    crearFila(idDinero, m, 0);
+                    crearFila(idVentas, 0, base);
+                    crearFila(idImpuesto, 0, igv);
+                } else {
+                    crearFila(idDinero, m, 0);
+                    crearFila(idVentas, 0, m);
+                }
+            } else if (plantillaActual === "compra") {
+                if (conImp) {
+                    var baseC = m / 1.18;
+                    var igvC = m - baseC;
+                    crearFila(idInventario, baseC, 0);
+                    crearFila(idImpuesto, igvC, 0);
+                    crearFila(idPago, 0, m);
+                } else {
+                    crearFila(idInventario, m, 0);
+                    crearFila(idPago, 0, m);
+                }
+            } else if (plantillaActual === "servicio") {
+                crearFila(idServicios, m, 0);
+                crearFila(idPago, 0, m);
+            } else if (plantillaActual === "cobro") {
+                crearFila(idDinero, m, 0);
+                crearFila(idClientes, 0, m);
+            } else if (plantillaActual === "pago-proveedor") {
+                crearFila(idProveedores, m, 0);
+                crearFila(idPago, 0, m);
+            } else if (plantillaActual === "sueldos") {
+                crearFila(idSueldos, m, 0);
+                crearFila(idPago, 0, m);
+            } else if (plantillaActual === "capital") {
+                crearFila(idDinero, m, 0);
+                crearFila(idCapital, 0, m);
+            } else {
+                crearFila(idDinero, m, 0);
+                crearFila(idVentas, 0, m);
+            }
+
+            calcularTotales();
+            boxConfigurador.classList.add("d-none");
+            document.getElementById("tablaDetalles").scrollIntoView({ behavior: "smooth" });
+        });
+
+        // Inicializar con dos filas
+        crearFila(buscarCuentaId("1.1.01", "caja", "activo"), 0, 0);
+        crearFila(buscarCuentaId("4.1.01", "venta", "ingreso"), 0, 0);
+        calcularTotales();
+    });
+</script>
+}
