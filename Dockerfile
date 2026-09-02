@@ -1,6 +1,6 @@
 ﻿# =========================================================================
 # DOCKERFILE PARA SISTEMA CONTABLE ASP.NET MVC (.NET Framework 4.8 / Mono)
-# Optimizado para Render.com con Ubuntu 20.04 LTS y clave HTTPS directa
+# Optimizado para Render.com con Ubuntu 20.04 LTS y copia total de dependencias
 # =========================================================================
 
 FROM ubuntu:20.04
@@ -38,8 +38,9 @@ RUN nuget restore SistemaContable.sln
 # 5. Copiar el resto del código fuente
 COPY . ./
 
-# 6. Compilar en modo Release
-RUN msbuild /p:Configuration=Release /p:Platform="Any CPU" /v:m SistemaContable.sln
+# 6. Compilar en modo Release y asegurar presencia de todas las DLLs en bin/
+RUN msbuild /p:Configuration=Release /p:Platform="Any CPU" /v:m SistemaContable.sln && \
+    find /app/packages -name "*.dll" -exec cp -n {} /app/bin/ \;
 
 # 7. Crear y asegurar permisos totales de lectura y escritura en App_Data/Respaldos
 RUN mkdir -p /app/App_Data/Respaldos && \

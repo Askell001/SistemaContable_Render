@@ -1,9 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Linq;
-using System.Linq.Expressions;
 using MongoDB.Bson;
 using MongoDB.Driver;
 using SistemaContable.Models;
@@ -11,8 +10,8 @@ using SistemaContable.Models;
 namespace SistemaContable.Data
 {
     /// <summary>
-    /// Contexto de datos MongoDB con persistencia y sincronización simultánea en tiempo real
-    /// tanto en MongoDB Atlas (Nube) como en MongoDB Local (localhost:27017).
+    /// Contexto de datos centralizado exclusivo con MongoDB Atlas (Nube).
+    /// Optimizado para despliegues en la nube (Render, AWS, Azure) sin dependencias locales.
     /// </summary>
     public sealed class MongoDbContext
     {
@@ -23,13 +22,6 @@ namespace SistemaContable.Data
         private readonly IMongoDatabase _databaseAtlas;
         private volatile bool _isAtlasConnected;
         private readonly string _errorAtlas;
-
-        private readonly IMongoClient _clientLocal;
-        private readonly IMongoDatabase _databaseLocal;
-        private volatile bool _isLocalConnected;
-        private readonly string _errorLocal;
-
-        private readonly string _activeConfigName;
         private readonly string _databaseName;
 
         /// <summary>
@@ -38,147 +30,91 @@ namespace SistemaContable.Data
         public static MongoDbContext Instance => _instance.Value;
 
         /// <summary>
-        /// Base de datos principal de lectura/consulta.
-        /// Prioriza Localhost cuando está disponible para garantizar soporte 100% offline y latencia 0ms,
-        /// con failover automático a Atlas cuando sea necesario.
+        /// Base de datos principal de lectura y escritura en MongoDB Atlas.
         /// </summary>
-        public IMongoDatabase Database
-        {
-            get
-            {
-                if (_isLocalConnected && _databaseLocal != null)
-                {
-                    return _databaseLocal;
-                }
-                return _databaseAtlas ?? _databaseLocal;
-            }
-        }
+        public IMongoDatabase Database => _databaseAtlas;
 
         /// <summary>
-        /// Base de datos de Atlas (Nube).
+        /// Base de datos Atlas (Nube).
         /// </summary>
         public IMongoDatabase DatabaseAtlas => _databaseAtlas;
 
         /// <summary>
-        /// Base de datos de Localhost (Local).
+        /// Compatibilidad: apunta a la base de datos principal de Atlas.
         /// </summary>
-        public IMongoDatabase DatabaseLocal => _databaseLocal;
+        public IMongoDatabase DatabaseLocal => _databaseAtlas;
 
         /// <summary>
-        /// Indica si al menos una base de datos está conectada.
+        /// Indica si la conexión con MongoDB Atlas está activa.
         /// </summary>
-        public bool IsConnected => _isAtlasConnected || _isLocalConnected;
+        public bool IsConnected => _isAtlasConnected;
 
-        /// <summary>
-        /// Indica si Atlas está conectado y operativo.
-        /// </summary>
         public bool IsAtlasConnected => _isAtlasConnected;
+        public bool IsLocalConnected => _isAtlasConnected;
+        public bool IsSimultaneousSync => _isAtlasConnected;
 
-        /// <summary>
-        /// Indica si Localhost (27017) está conectado y operativo.
-        /// </summary>
-        public bool IsLocalConnected => _isLocalConnected;
-
-        /// <summary>
-        /// Indica si ambas bases de datos están sincronizándose en tiempo real simultáneamente.
-        /// </summary>
-        public bool IsSimultaneousSync => _isAtlasConnected && _isLocalConnected;
-
-        public string ActiveConnectionName => IsSimultaneousSync 
-            ? "Simultáneo (Atlas + Localhost)" 
-            : (_isAtlasConnected ? "MongoAtlas (Nube)" : (_isLocalConnected ? "MongoLocal (Localhost)" : "Desconectado"));
-
+        public string ActiveConnectionName => _isAtlasConnected ? "MongoDB Atlas (Nube)" : "Desconectado";
         public string DatabaseName => _databaseName;
+        public string LastErrorMessage => !_isAtlasConnected ? _errorAtlas : null;
 
-        public string LastErrorMessage => !_isAtlasConnected && !_isLocalConnected 
-            ? $"Atlas: {_errorAtlas} | Local: {_errorLocal}" 
-            : null;
+        // ================= Colecciones Tipadas =================
+        public IMongoCollection<Usuario> Usuarios => _databaseAtlas?.GetCollection<Usuario>("usuarios");
+        public IMongoCollection<Rol> Roles => _databaseAtlas?.GetCollection<Rol>("roles");
+        public IMongoCollection<Notificacion> Notificaciones => _databaseAtlas?.GetCollection<Notificacion>("notificaciones");
+        public IMongoCollection<CuentaContable> CuentasContables => _databaseAtlas?.GetCollection<CuentaContable>("cuentasContables");
+        public IMongoCollection<AsientoContable> AsientosContables => _databaseAtlas?.GetCollection<AsientoContable>("asientosContables");
+        public IMongoCollection<ControlSincronizacion> ControlSincronizacion => _databaseAtlas?.GetCollection<ControlSincronizacion>("controlSincronizacion");
 
-        // ================= Colecciones Tipadas de Lectura =================
-        public IMongoCollection<Usuario> Usuarios => Database?.GetCollection<Usuario>("usuarios");
-        public IMongoCollection<Rol> Roles => Database?.GetCollection<Rol>("roles");
-        public IMongoCollection<Notificacion> Notificaciones => Database?.GetCollection<Notificacion>("notificaciones");
-        public IMongoCollection<CuentaContable> CuentasContables => Database?.GetCollection<CuentaContable>("cuentasContables");
-        public IMongoCollection<AsientoContable> AsientosContables => Database?.GetCollection<AsientoContable>("asientosContables");
-        public IMongoCollection<ControlSincronizacion> ControlSincronizacion => Database?.GetCollection<ControlSincronizacion>("controlSincronizacion");
+        // Alias de compatibilidad
+        public IMongoCollection<Usuario> ColUsuariosAtlas => Usuarios;
+        public IMongoCollection<Rol> ColRolesAtlas => Roles;
+        public IMongoCollection<Notificacion> ColNotificacionesAtlas => Notificaciones;
+        public IMongoCollection<CuentaContable> ColCuentasAtlas => CuentasContables;
+        public IMongoCollection<AsientoContable> ColAsientosAtlas => AsientosContables;
+        public IMongoCollection<ControlSincronizacion> ColControlAtlas => ControlSincronizacion;
 
-        // Colecciones Atlas
-        public IMongoCollection<Usuario> ColUsuariosAtlas => _databaseAtlas?.GetCollection<Usuario>("usuarios");
-        public IMongoCollection<Rol> ColRolesAtlas => _databaseAtlas?.GetCollection<Rol>("roles");
-        public IMongoCollection<Notificacion> ColNotificacionesAtlas => _databaseAtlas?.GetCollection<Notificacion>("notificaciones");
-        public IMongoCollection<CuentaContable> ColCuentasAtlas => _databaseAtlas?.GetCollection<CuentaContable>("cuentasContables");
-        public IMongoCollection<AsientoContable> ColAsientosAtlas => _databaseAtlas?.GetCollection<AsientoContable>("asientosContables");
-        public IMongoCollection<ControlSincronizacion> ColControlAtlas => _databaseAtlas?.GetCollection<ControlSincronizacion>("controlSincronizacion");
-
-        // Colecciones Local
-        public IMongoCollection<Usuario> ColUsuariosLocal => _databaseLocal?.GetCollection<Usuario>("usuarios");
-        public IMongoCollection<Rol> ColRolesLocal => _databaseLocal?.GetCollection<Rol>("roles");
-        public IMongoCollection<Notificacion> ColNotificacionesLocal => _databaseLocal?.GetCollection<Notificacion>("notificaciones");
-        public IMongoCollection<CuentaContable> ColCuentasLocal => _databaseLocal?.GetCollection<CuentaContable>("cuentasContables");
-        public IMongoCollection<AsientoContable> ColAsientosLocal => _databaseLocal?.GetCollection<AsientoContable>("asientosContables");
-        public IMongoCollection<ControlSincronizacion> ColControlLocal => _databaseLocal?.GetCollection<ControlSincronizacion>("controlSincronizacion");
+        public IMongoCollection<Usuario> ColUsuariosLocal => Usuarios;
+        public IMongoCollection<Rol> ColRolesLocal => Roles;
+        public IMongoCollection<Notificacion> ColNotificacionesLocal => Notificaciones;
+        public IMongoCollection<CuentaContable> ColCuentasLocal => CuentasContables;
+        public IMongoCollection<AsientoContable> ColAsientosLocal => AsientosContables;
+        public IMongoCollection<ControlSincronizacion> ColControlLocal => ControlSincronizacion;
 
         private MongoDbContext()
         {
-            _activeConfigName = ConfigurationManager.AppSettings["ActiveMongoConnection"] ?? "MongoAtlas";
             _databaseName = ConfigurationManager.AppSettings["MongoDatabaseName"] ?? "ContabilidadDB";
             var pingCmd = new BsonDocument("ping", 1);
 
-            // 1. Inicializar Conexión MongoAtlas con timeouts cortos para fail-fast
             try
             {
-                var connAtlas = ConfigurationManager.ConnectionStrings["MongoAtlas"]?.ConnectionString;
+                var connAtlas = Environment.GetEnvironmentVariable("MongoAtlas") 
+                    ?? ConfigurationManager.ConnectionStrings["MongoAtlas"]?.ConnectionString
+                    ?? "mongodb+srv://user:12345@registrousuarios.e6jeny6.mongodb.net/";
+
                 if (!string.IsNullOrWhiteSpace(connAtlas))
                 {
                     var settingsAtlas = MongoClientSettings.FromUrl(new MongoUrl(connAtlas));
-                    settingsAtlas.ServerSelectionTimeout = TimeSpan.FromMilliseconds(1000);
-                    settingsAtlas.ConnectTimeout = TimeSpan.FromMilliseconds(1000);
-                    settingsAtlas.SocketTimeout = TimeSpan.FromMilliseconds(2000);
-                    settingsAtlas.ApplicationName = "SistemaContable";
+                    settingsAtlas.ServerSelectionTimeout = TimeSpan.FromSeconds(5);
+                    settingsAtlas.ConnectTimeout = TimeSpan.FromSeconds(5);
+                    settingsAtlas.SocketTimeout = TimeSpan.FromSeconds(10);
+                    settingsAtlas.ApplicationName = "SistemaContableCloud";
 
                     _clientAtlas = new MongoClient(settingsAtlas);
                     _databaseAtlas = _clientAtlas.GetDatabase(_databaseName);
                     _databaseAtlas.RunCommand<BsonDocument>(pingCmd);
                     _isAtlasConnected = true;
-                    Trace.WriteLine("[MongoDbContext] Conexión establecida con MongoAtlas.");
+                    Trace.WriteLine("[MongoDbContext] Conexión establecida con MongoDB Atlas (Nube).");
                 }
             }
             catch (Exception ex)
             {
                 _isAtlasConnected = false;
                 _errorAtlas = ex.Message;
-                Trace.TraceWarning($"[MongoDbContext] MongoAtlas no disponible al iniciar (Operando en Modo Offline/Local): {ex.Message}");
+                Trace.TraceWarning($"[MongoDbContext] Aviso al conectar con MongoAtlas: {ex.Message}");
             }
-
-            // 2. Inicializar Conexión MongoLocal
-            try
-            {
-                var connLocal = ConfigurationManager.ConnectionStrings["MongoLocal"]?.ConnectionString 
-                    ?? "mongodb://localhost:27017";
-
-                var settingsLocal = MongoClientSettings.FromUrl(new MongoUrl(connLocal));
-                settingsLocal.ServerSelectionTimeout = TimeSpan.FromSeconds(2);
-                settingsLocal.ConnectTimeout = TimeSpan.FromSeconds(2);
-                settingsLocal.SocketTimeout = TimeSpan.FromSeconds(5);
-                settingsLocal.ApplicationName = "SistemaContableLocal";
-
-                _clientLocal = new MongoClient(settingsLocal);
-                _databaseLocal = _clientLocal.GetDatabase(_databaseName);
-                _databaseLocal.RunCommand<BsonDocument>(pingCmd);
-                _isLocalConnected = true;
-                Trace.WriteLine("[MongoDbContext] Conexión establecida con MongoLocal (Servicio Local Activo).");
-            }
-            catch (Exception ex)
-            {
-                _isLocalConnected = false;
-                _errorLocal = ex.Message;
-                Trace.TraceWarning($"[MongoDbContext] MongoLocal no disponible: {ex.Message}");
-            }
-
-            Trace.WriteLine($"[MongoDbContext] Estado de persistencia: {ActiveConnectionName}");
         }
 
-        #region Métodos de Escritura Simultánea (Atlas + Local)
+        #region Métodos de Persistencia en Atlas
 
         // ================= ASIENTOS CONTABLES =================
         public void InsertAsientoSimultaneo(AsientoContable asiento)
@@ -188,27 +124,24 @@ namespace SistemaContable.Data
                 asiento.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColAsientosAtlas?.ReplaceOne(a => a.Id == asiento.Id, asiento, new ReplaceOptions { IsUpsert = true }),
-                () => ColAsientosLocal?.ReplaceOne(a => a.Id == asiento.Id, asiento, new ReplaceOptions { IsUpsert = true }),
                 $"Insert/Replace Asiento {asiento.NumeroAsiento}"
             );
         }
 
         public void UpdateAsientoSimultaneo(string id, UpdateDefinition<AsientoContable> update)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColAsientosAtlas?.UpdateOne(a => a.Id == id, update),
-                () => ColAsientosLocal?.UpdateOne(a => a.Id == id, update),
                 $"Update Asiento {id}"
             );
         }
 
         public void DeleteAsientoSimultaneo(string id)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColAsientosAtlas?.DeleteOne(a => a.Id == id),
-                () => ColAsientosLocal?.DeleteOne(a => a.Id == id),
                 $"Delete Asiento {id}"
             );
         }
@@ -221,9 +154,8 @@ namespace SistemaContable.Data
                 cuenta.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColCuentasAtlas?.ReplaceOne(c => c.Id == cuenta.Id, cuenta, new ReplaceOptions { IsUpsert = true }),
-                () => ColCuentasLocal?.ReplaceOne(c => c.Id == cuenta.Id, cuenta, new ReplaceOptions { IsUpsert = true }),
                 $"Insert/Replace Cuenta {cuenta.Codigo}"
             );
         }
@@ -236,7 +168,7 @@ namespace SistemaContable.Data
                 if (string.IsNullOrEmpty(c.Id)) c.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () =>
                 {
                     if (ColCuentasAtlas != null)
@@ -247,34 +179,22 @@ namespace SistemaContable.Data
                         }
                     }
                 },
-                () =>
-                {
-                    if (ColCuentasLocal != null)
-                    {
-                        foreach (var c in lista)
-                        {
-                            ColCuentasLocal.ReplaceOne(x => x.Id == c.Id, c, new ReplaceOptions { IsUpsert = true });
-                        }
-                    }
-                },
                 $"InsertMany Cuentas ({lista.Count})"
             );
         }
 
         public void UpdateCuentaSimultanea(string id, UpdateDefinition<CuentaContable> update)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColCuentasAtlas?.UpdateOne(c => c.Id == id, update),
-                () => ColCuentasLocal?.UpdateOne(c => c.Id == id, update),
                 $"Update Cuenta {id}"
             );
         }
 
         public void DeleteCuentaSimultanea(string id)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColCuentasAtlas?.DeleteOne(c => c.Id == id),
-                () => ColCuentasLocal?.DeleteOne(c => c.Id == id),
                 $"Delete Cuenta {id}"
             );
         }
@@ -287,18 +207,16 @@ namespace SistemaContable.Data
                 usuario.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColUsuariosAtlas?.ReplaceOne(u => u.Id == usuario.Id, usuario, new ReplaceOptions { IsUpsert = true }),
-                () => ColUsuariosLocal?.ReplaceOne(u => u.Id == usuario.Id, usuario, new ReplaceOptions { IsUpsert = true }),
                 $"Insert/Replace Usuario {usuario.Correo}"
             );
         }
 
         public void UpdateUsuarioSimultaneo(string id, UpdateDefinition<Usuario> update)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColUsuariosAtlas?.UpdateOne(u => u.Id == id, update),
-                () => ColUsuariosLocal?.UpdateOne(u => u.Id == id, update),
                 $"Update Usuario {id}"
             );
         }
@@ -311,9 +229,8 @@ namespace SistemaContable.Data
                 rol.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColRolesAtlas?.ReplaceOne(r => r.Id == rol.Id, rol, new ReplaceOptions { IsUpsert = true }),
-                () => ColRolesLocal?.ReplaceOne(r => r.Id == rol.Id, rol, new ReplaceOptions { IsUpsert = true }),
                 $"Insert/Replace Rol {rol.NombreRol}"
             );
         }
@@ -326,69 +243,46 @@ namespace SistemaContable.Data
                 notificacion.Id = ObjectId.GenerateNewId().ToString();
             }
 
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColNotificacionesAtlas?.ReplaceOne(n => n.Id == notificacion.Id, notificacion, new ReplaceOptions { IsUpsert = true }),
-                () => ColNotificacionesLocal?.ReplaceOne(n => n.Id == notificacion.Id, notificacion, new ReplaceOptions { IsUpsert = true }),
                 $"Insert/Replace Notificacion {notificacion.Mensaje}"
             );
         }
 
         public void UpdateNotificacionSimultanea(string id, UpdateDefinition<Notificacion> update)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColNotificacionesAtlas?.UpdateOne(n => n.Id == id, update),
-                () => ColNotificacionesLocal?.UpdateOne(n => n.Id == id, update),
                 $"Update Notificacion {id}"
             );
         }
 
         public void UpdateManyNotificacionesSimultaneo(FilterDefinition<Notificacion> filter, UpdateDefinition<Notificacion> update)
         {
-            EjecutarDobleAccion(
+            EjecutarAccion(
                 () => ColNotificacionesAtlas?.UpdateMany(filter, update),
-                () => ColNotificacionesLocal?.UpdateMany(filter, update),
                 "UpdateMany Notificaciones"
             );
         }
 
         /// <summary>
-        /// Ejecuta una acción de base de datos en Atlas y en Localhost en paralelo de forma resiliente.
+        /// Ejecuta una acción de base de datos en MongoDB Atlas y actualiza auditoría.
         /// </summary>
-        private void EjecutarDobleAccion(Action accionAtlas, Action accionLocal, string descripcionOperacion)
+        private void EjecutarAccion(Action accionAtlas, string descripcionOperacion)
         {
-            bool atlasOk = false;
-            bool localOk = false;
-
             if (_isAtlasConnected && accionAtlas != null)
             {
                 try
                 {
                     accionAtlas();
-                    atlasOk = true;
+                    Trace.WriteLine($"[MongoDbContext] Persistencia ({descripcionOperacion}) -> Atlas: OK");
                 }
                 catch (Exception ex)
                 {
-                    _isAtlasConnected = false;
-                    Trace.TraceWarning($"[MongoDbContext] Atlas no respondió (Modo offline activo): {ex.Message}");
+                    Trace.TraceWarning($"[MongoDbContext] Error en Atlas ({descripcionOperacion}): {ex.Message}");
                 }
             }
 
-            if (_isLocalConnected && accionLocal != null)
-            {
-                try
-                {
-                    accionLocal();
-                    localOk = true;
-                }
-                catch (Exception ex)
-                {
-                    Trace.TraceWarning($"[MongoDbContext] Error en Localhost ({descripcionOperacion}): {ex.Message}");
-                }
-            }
-
-            Trace.WriteLine($"[MongoDbContext] Persistencia ({descripcionOperacion}) -> Atlas: {(atlasOk ? "OK" : "Fuera de línea")}, Local: {(localOk ? "OK" : "Fallo")}");
-
-            // Actualizar timestamp de auditoría en la colección ControlSincronizacion
             if (!descripcionOperacion.StartsWith("ControlSync"))
             {
                 ActualizarControlSincronizacionSimultaneo(descripcionOperacion);
@@ -396,7 +290,7 @@ namespace SistemaContable.Data
         }
 
         /// <summary>
-        /// Actualiza la marca de tiempo de sincronización con la hora oficial de Ecuador en ambas bases de datos.
+        /// Actualiza la marca de tiempo de sincronización con la hora oficial de Ecuador en MongoDB Atlas.
         /// </summary>
         public void ActualizarControlSincronizacionSimultaneo(string accion, string origen = "Web")
         {
@@ -416,23 +310,7 @@ namespace SistemaContable.Data
 
                 if (_isAtlasConnected && ColControlAtlas != null)
                 {
-                    try
-                    {
-                        ColControlAtlas.ReplaceOne(x => x.Id == ctrl.Id, ctrl, new ReplaceOptions { IsUpsert = true });
-                    }
-                    catch
-                    {
-                        _isAtlasConnected = false;
-                    }
-                }
-
-                if (_isLocalConnected && ColControlLocal != null)
-                {
-                    try
-                    {
-                        ColControlLocal.ReplaceOne(x => x.Id == ctrl.Id, ctrl, new ReplaceOptions { IsUpsert = true });
-                    }
-                    catch { }
+                    ColControlAtlas.ReplaceOne(x => x.Id == ctrl.Id, ctrl, new ReplaceOptions { IsUpsert = true });
                 }
             }
             catch { }
@@ -441,51 +319,31 @@ namespace SistemaContable.Data
         #endregion
 
         /// <summary>
-        /// Realiza un ping activo a ambas bases de datos para diagnóstico en tiempo real.
+        /// Realiza un ping activo a MongoDB Atlas para diagnóstico en tiempo real.
         /// </summary>
         public (bool Success, long ElapsedMs, string Message) TestConnection()
         {
             if (!IsConnected)
             {
-                return (false, 0, LastErrorMessage ?? "No se inicializó ninguna conexión con MongoDB.");
+                return (false, 0, LastErrorMessage ?? "No se inicializó ninguna conexión con MongoDB Atlas.");
             }
 
             var sw = Stopwatch.StartNew();
             var pingCmd = new BsonDocument("ping", 1);
-            string estadoMsg = "";
 
-            if (_databaseAtlas != null)
+            try
             {
-                try
-                {
-                    _databaseAtlas.RunCommand<BsonDocument>(pingCmd);
-                    _isAtlasConnected = true;
-                    estadoMsg += "Atlas: OK";
-                }
-                catch (Exception)
-                {
-                    _isAtlasConnected = false;
-                    estadoMsg += "Atlas: Fuera de Línea";
-                }
+                _databaseAtlas.RunCommand<BsonDocument>(pingCmd);
+                _isAtlasConnected = true;
+                sw.Stop();
+                return (true, sw.ElapsedMilliseconds, "MongoDB Atlas (Nube): OK");
             }
-
-            if (_databaseLocal != null)
+            catch (Exception ex)
             {
-                try
-                {
-                    _databaseLocal.RunCommand<BsonDocument>(pingCmd);
-                    _isLocalConnected = true;
-                    estadoMsg += (estadoMsg.Length > 0 ? " | " : "") + "Localhost: OK";
-                }
-                catch (Exception ex)
-                {
-                    _isLocalConnected = false;
-                    estadoMsg += (estadoMsg.Length > 0 ? " | " : "") + "Localhost: Falló (" + ex.Message + ")";
-                }
+                _isAtlasConnected = false;
+                sw.Stop();
+                return (false, sw.ElapsedMilliseconds, $"MongoDB Atlas: Falló ({ex.Message})");
             }
-
-            sw.Stop();
-            return (IsConnected, sw.ElapsedMilliseconds, $"Sincronización: {estadoMsg}");
         }
     }
 }
