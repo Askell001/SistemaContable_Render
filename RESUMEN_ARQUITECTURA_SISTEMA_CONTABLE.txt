@@ -1,0 +1,189 @@
+================================================================================
+                    SISTEMA CONTABLE - ARQUITECTURA Y RESUMEN
+================================================================================
+
+1. DESCRIPCIÓN GENERAL DEL SISTEMA
+--------------------------------------------------------------------------------
+El Sistema Contable es una solución web empresarial desarrollada bajo el patrón
+arquitectónico MVC (Modelo-Vista-Controlador) sobre el framework ASP.NET MVC 5 
+(.NET Framework 4.8), utilizando MongoDB como motor de base de datos NoSQL.
+
+El sistema gestiona el ciclo contable completo respetando el principio contable
+de partida doble (Debe = Haber), administración de catálogos de cuentas, emisión
+de estados financieros y libros contables (Excel, PDF, XML), respaldos integrales
+y un mecanismo avanzado de sincronización resiliente híbrida (Nube / Local / Archivo).
+
+
+2. STACK TECNOLÓGICO Y COMPONENTES
+--------------------------------------------------------------------------------
+* Lenguaje / Plataforma : C# 7.3+ / .NET Framework 4.8
+* Framework Web         : ASP.NET MVC 5 (Razor Engine)
+* Servidor Web          : IIS / IIS Express
+* Base de Datos         : MongoDB (MongoDB C# Driver v2.25+)
+                          - Soporte para MongoDB Atlas (Cloud)
+                          - Soporte para MongoDB Local (localhost:27017)
+* Seguridad & Hashing   : BCrypt.Net-Next (algoritmo seguro de contraseñas)
+* Generación de Reportes: - ClosedXML (Hojas de cálculo Excel .xlsx)
+                          - iTextSharp (Documentos PDF estructurados)
+                          - System.Xml.Linq (Archivos de intercambio XML)
+* Frontend              : HTML5, CSS3, Bootstrap 5, JavaScript, jQuery / AJAX
+* Serialización         : Newtonsoft.Json, BSON
+
+
+3. ARQUITECTURA DE SOFTWARE
+--------------------------------------------------------------------------------
+La solución adopta una arquitectura en capas desacopladas con diseño orientado
+a servicios y resiliencia de datos:
+
+  [ Capa de Presentación (Views / UI) ]
+         │  Bootstrap 5, Razor (.cshtml), AJAX
+         ▼
+  [ Capa de Controladores (Controllers) ]
+         │  Account, Usuarios, PlanCuentas, AsientosContables, Reportes, etc.
+         │  Filtros de autorización: SessionAuthorizeAttribute
+         ▼
+  [ Capa de Servicios de Negocio (Services) ]
+         │  - ReporteService (Excel, PDF, XML, UTC-5 Ecuador)
+         │  - SyncService (Auto-Healing Sync Nube/Local/JSON)
+         │  - BackupService (Exportación e importación completa)
+         │  - NotificacionService (Alertas y logs de auditoría)
+         ▼
+  [ Capa de Datos y Modelos (Data / Models) ]
+         │  - MongoDbContext (Singleton Thread-Safe con Lazy<T>)
+         │  - Entidades BSON / ViewModels (AsientoContable, CuentaContable, etc.)
+         ▼
+  [ Capa de Persistencia y Almacenamiento ]
+         ├─ MongoDB Atlas (Base principal en la nube)
+         ├─ MongoDB Localhost (Base local de contingencia)
+         └─ Sistema de Archivos Local (Desktop: Reportes y Respaldos JSON)
+
+
+4. PATRONES DE DISEÑO IMPLEMENTADOS
+--------------------------------------------------------------------------------
+a) Singleton Thread-Safe (MongoDbContext):
+   Garantiza una única instancia compartida de IMongoClient a través de 
+   Lazy<MongoDbContext>, evitando sobrecarga de sockets y optimizando los pools
+   de conexión hacia MongoDB.
+
+b) Auto-Healing Sync (Sincronización Autorreparable):
+   Mecanismo de alta disponibilidad que compara las marcas de tiempo (TimeStamps
+   en zona horaria UTC-5 Ecuador) entre MongoDB Atlas, MongoDB Local y el archivo
+   físico de respaldo. Determina automáticamente la fuente con datos más recientes
+   y replica bidireccionalmente los cambios para prevenir pérdida de datos.
+
+c) Model Binding Personalizado (InvariantDecimalModelBinder):
+   Normaliza el parsing de valores numéricos decimales (separadores de coma y punto)
+   garantizando exactitud matemática en transacciones financieras.
+
+d) Control de Acceso Basado en Roles (RBAC):
+   Validación granular mediante filtros de sesión personalizados para controlar
+   acciones de Administradores, Contadores y Auditores.
+
+
+5. ESTRUCTURA DEL PROYECTO
+--------------------------------------------------------------------------------
+sistema contable/
+├── App_Start/
+│   ├── BundleConfig.cs                # Optimización y bundles CSS/JS
+│   ├── FilterConfig.cs                # Filtros globales MVC
+│   └── RouteConfig.cs                 # Enrutamiento de URLs
+├── Controllers/
+│   ├── AccountController.cs           # Autenticación, login y logout
+│   ├── AdminController.cs             # Panel administrativo
+│   ├── AsientosContablesController.cs # Transacciones y validación partida doble
+│   ├── DashboardController.cs         # Métricas y resumen operativo
+│   ├── HomeController.cs              # Diagnóstico y health checks de MongoDB
+│   ├── NotificacionesController.cs    # Gestión de avisos y alertas
+│   ├── PlanCuentasController.cs       # Catálogo y jerarquía de cuentas
+│   ├── ReportesController.cs          # Generación y exportación de reportes
+│   └── UsuariosController.cs          # Gestión CRUD de usuarios y roles
+├── Data/
+│   └── MongoDbContext.cs              # Conexión Singleton resiliente a MongoDB
+├── Filters/
+│   ├── InvariantDecimalModelBinder.cs # Binder para precisión decimal
+│   └── SessionAuthorizeAttribute.cs   # Autorización de sesión y roles
+├── Models/
+│   ├── AsientoContable.cs             # Entidad Asiento y Detalle (Debe/Haber)
+│   ├── AsientoFormViewModel.cs        # ViewModel para captura de transacciones
+│   ├── BackupCompletoDTO.cs           # DTO para exportación integral JSON
+│   ├── ControlSincronizacion.cs       # Metadatos de sincronización
+│   ├── CuentaContable.cs              # Entidad Plan de Cuentas
+│   ├── FiltroReporteViewModel.cs      # Filtros por fecha y cuenta para reportes
+│   ├── LoginViewModel.cs              # Credenciales de acceso
+│   ├── Notificacion.cs                # Entidad de alertas del sistema
+│   ├── ResultadoSync.cs               # Respuestas del proceso de sincronización
+│   ├── Rol.cs                         # Definición de roles y permisos
+│   ├── Usuario.cs                     # Entidad de usuario con PasswordHash
+│   └── UsuarioFormViewModel.cs        # Captura y edición de usuarios
+├── Services/
+│   ├── BackupService.cs               # Generación y restauración de backups
+│   ├── NotificacionService.cs         # Emisión de notificaciones a colecciones
+│   ├── ReporteService.cs              # Motor de reportes (Excel, PDF, XML)
+│   └── SyncService.cs                 # Motor de sincronización Auto-Healing
+├── Views/                             # Vistas Razor estructuradas por módulo
+│   ├── Account/
+│   ├── AsientosContables/
+│   ├── Dashboard/
+│   ├── Home/
+│   ├── Notificaciones/
+│   ├── PlanCuentas/
+│   ├── Reportes/
+│   ├── Shared/_Layout.cshtml          # Plantilla principal con Bootstrap 5
+│   └── Usuarios/
+├── Global.asax / Global.asax.cs       # Inicialización de la aplicación web
+├── packages.config                    # Configuración de dependencias NuGet
+├── SistemaContable.csproj             # Definición del proyecto .NET
+├── SistemaContable.sln                # Solución de Visual Studio
+└── Web.config                         # Cadenas de conexión y parámetros
+
+
+6. MÓDULOS Y CARACTERÍSTICAS FUNCIONALES
+--------------------------------------------------------------------------------
+
+1. Autenticación y Seguridad de Usuarios:
+   - Registro y login seguro con contraseñas encriptadas mediante BCrypt.
+   - Manejo de sesiones y restricción de vistas/acciones según rol asignado.
+
+2. Plan de Cuentas Contables:
+   - Clasificación jerárquica: Activo, Pasivo, Patrimonio, Ingresos, Costos, Gastos.
+   - Control de naturalezas contables (Deudora / Acreedora), niveles y estado.
+
+3. Asientos Contables y Validación de Partida Doble:
+   - Registro dinámico de múltiples líneas de detalles de asiento.
+   - Validación obligatoria: Suma(Débitos) == Suma(Créditos).
+   - Anulación controlada y trazabilidad de creadores de asientos.
+
+4. Motor de Reportes Contables y Financieros:
+   - Reportes generados: Libro Diario, Libro Mayor, Balance General, 
+     Estado de Resultados y Balance de Comprobación.
+   - Formatos de salida: Excel (.xlsx), PDF y XML.
+   - Auto-Guardado en Escritorio: Cada reporte generado se almacena en la carpeta
+     física 'Reportes' en el Escritorio del usuario.
+   - Configuración horaria: Timestamping en hora oficial de Ecuador (UTC-5).
+
+5. Motor de Sincronización Avanzada (SyncService / Auto-Healing):
+   - Soporte para operar online (Atlas) u offline (Localhost).
+   - Detección automática de inconsistencias o desconexiones.
+   - Almacenamiento periódico de respaldo en archivo JSON:
+     'Desktop/Respaldo base de datos/Respaldo_Contabilidad_Full.json'.
+   - Resolución automática de conflictos favoreciendo la versión con timestamp
+     más reciente.
+
+6. Diagnóstico y Monitoreo (Health Check):
+   - Dashboard en vivo con prueba de conexión ('ping') hacia MongoDB.
+   - Visualización de latencia, estado del clúster y total de registros.
+
+
+7. CONFIGURACIÓN DEL ENTORNO (Web.config)
+--------------------------------------------------------------------------------
+* Selector de Conexión:
+  <add key="ActiveMongoConnection" value="MongoAtlas" /> <!-- O 'MongoLocal' -->
+  <add key="MongoDatabaseName" value="ContabilidadDB" />
+
+* Cadenas de Conexión:
+  - MongoLocal: mongodb://localhost:27017
+  - MongoAtlas: mongodb+srv://<usuario>:<password>@<cluster>.mongodb.net/
+
+================================================================================
+FIN DEL DOCUMENTO
+================================================================================

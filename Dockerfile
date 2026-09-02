@@ -1,6 +1,6 @@
 ﻿# =========================================================================
 # DOCKERFILE PARA SISTEMA CONTABLE ASP.NET MVC (.NET Framework 4.8 / Mono)
-# Optimizado para Render.com con Ubuntu 20.04 LTS y copia total de librerías
+# Optimizado para Render.com con registro GAC de ASP.NET Razor y WebPages
 # =========================================================================
 
 FROM ubuntu:20.04
@@ -38,22 +38,32 @@ RUN nuget restore SistemaContable.sln
 # 5. Copiar el resto del código fuente
 COPY . ./
 
-# 6. Compilar en modo Release y copiar todas las DLLs de ejecución desde /lib/ hacia /app/bin
-RUN msbuild /p:Configuration=Release /p:Platform="Any CPU" /v:m SistemaContable.sln && \
-    find /app/packages -path "*/lib/*" -name "*.dll" -exec cp -n {} /app/bin/ \; && \
-    find /app/bin -name "*SourceGeneration*.dll" -o -name "*CodeAnalysis*.dll" -o -name "*Analyzer*.dll" | xargs -r rm -f
+# 6. Compilar en modo Release
+RUN msbuild /p:Configuration=Release /p:Platform="Any CPU" /v:m SistemaContable.sln
 
-# 7. Crear y asegurar permisos totales de lectura y escritura en App_Data/Respaldos
+# 7. Copiar librerías de ejecución a /app/bin y registrar ensamblados clave en la GAC de Mono
+RUN mkdir -p /app/bin && \
+    find /app/packages -name "*.dll" ! -path "*/analyzers/*" -exec cp -n {} /app/bin/ \; && \
+    find /app/bin -name "*SourceGeneration*.dll" -o -name "*CodeAnalysis*.dll" -o -name "*Analyzer*.dll" | xargs -r rm -f && \
+    gacutil -i /app/bin/System.Web.WebPages.Razor.dll || true && \
+    gacutil -i /app/bin/System.Web.Razor.dll || true && \
+    gacutil -i /app/bin/System.Web.WebPages.dll || true && \
+    gacutil -i /app/bin/System.Web.Mvc.dll || true && \
+    gacutil -i /app/bin/System.Web.Helpers.dll || true && \
+    gacutil -i /app/bin/System.Web.WebPages.Deployment.dll || true && \
+    gacutil -i /app/bin/Microsoft.Web.Infrastructure.dll || true
+
+# 8. Crear y asegurar permisos totales de lectura y escritura en App_Data/Respaldos
 RUN mkdir -p /app/App_Data/Respaldos && \
     chmod -R 777 /app/App_Data
 
-# 8. Render inyecta dinámicamente la variable $PORT (por defecto 10000)
+# 9. Render inyecta dinámicamente la variable $PORT (por defecto 10000)
 ENV PORT=10000
 EXPOSE 10000
 
-# 9. Script de arranque resiliente con soporte de puerto dinámico y permisos
+# 10. Script de arranque resiliente con soporte de puerto dinámico y permisos
 RUN printf '#!/bin/bash\nset -e\nAPP_PORT="${PORT:-10000}"\nmkdir -p /app/App_Data/Respaldos\nchmod -R 777 /app/App_Data\necho "=== Sistema Contable iniciado en puerto $APP_PORT ==="\nexec xsp4 --port "$APP_PORT" --address 0.0.0.0 --nonstop --root /app\n' > /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
-# 10. Punto de entrada
+# 11. Punto de entrada
 ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
