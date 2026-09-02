@@ -10,6 +10,17 @@ namespace SistemaContable
     {
         protected void Application_Start()
         {
+            // Pre-cargar ensamblados de Razor en el AppDomain para Mono en Linux
+            try
+            {
+                var razorSectionType = typeof(System.Web.WebPages.Razor.Configuration.RazorWebSectionGroup);
+                Trace.WriteLine($"[Global.asax] Ensamblado Razor pre-cargado: {razorSectionType.Assembly.FullName}");
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceWarning($"[Global.asax] Aviso pre-cargando Razor: {ex.Message}");
+            }
+
             try
             {
                 AreaRegistration.RegisterAllAreas();

@@ -1,11 +1,12 @@
 ﻿# =========================================================================
 # DOCKERFILE PARA SISTEMA CONTABLE ASP.NET MVC (.NET Framework 4.8 / Mono)
-# Optimizado para Render.com con registro GAC de ASP.NET Razor y WebPages
+# Optimizado para Render.com con MONO_PATH y pre-registro GAC de Razor
 # =========================================================================
 
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
+ENV MONO_PATH=/app/bin:/usr/lib/mono/4.5
 
 # 1. Instalar Mono Complete, MSBuild, NuGet y XSP4 mediante clave GPG directa por HTTPS
 RUN apt-get update && \
@@ -41,7 +42,7 @@ COPY . ./
 # 6. Compilar en modo Release
 RUN msbuild /p:Configuration=Release /p:Platform="Any CPU" /v:m SistemaContable.sln
 
-# 7. Copiar librerías de ejecución a /app/bin y registrar ensamblados clave en la GAC de Mono
+# 7. Poblar /app/bin con todas las DLLs de dependencias y registrar en GAC
 RUN mkdir -p /app/bin && \
     find /app/packages -name "*.dll" ! -path "*/analyzers/*" -exec cp -n {} /app/bin/ \; && \
     find /app/bin -name "*SourceGeneration*.dll" -o -name "*CodeAnalysis*.dll" -o -name "*Analyzer*.dll" | xargs -r rm -f && \
@@ -61,8 +62,8 @@ RUN mkdir -p /app/App_Data/Respaldos && \
 ENV PORT=10000
 EXPOSE 10000
 
-# 10. Script de arranque resiliente con soporte de puerto dinámico y permisos
-RUN printf '#!/bin/bash\nset -e\nAPP_PORT="${PORT:-10000}"\nmkdir -p /app/App_Data/Respaldos\nchmod -R 777 /app/App_Data\necho "=== Sistema Contable iniciado en puerto $APP_PORT ==="\nexec xsp4 --port "$APP_PORT" --address 0.0.0.0 --nonstop --root /app\n' > /app/entrypoint.sh && \
+# 10. Script de arranque con MONO_PATH explícito y puerto dinámico
+RUN printf '#!/bin/bash\nset -e\nexport MONO_PATH="/app/bin:/usr/lib/mono/4.5:${MONO_PATH:-}"\nAPP_PORT="${PORT:-10000}"\nmkdir -p /app/App_Data/Respaldos\nchmod -R 777 /app/App_Data\necho "=== Sistema Contable iniciado en puerto $APP_PORT (MONO_PATH: $MONO_PATH) ==="\nexec xsp4 --port "$APP_PORT" --address 0.0.0.0 --nonstop --root /app\n' > /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh
 
 # 11. Punto de entrada
